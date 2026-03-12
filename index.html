@@ -7,28 +7,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.2/nacl.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.5/axios.min.js"></script>
-<!-- Official SASEUL JS Browser Build (try multiple CDN paths) -->
-<script>
-(function() {
-  const paths = [
-    'https://cdn.jsdelivr.net/npm/saseul/saseul.min.js',
-    'https://cdn.jsdelivr.net/npm/saseul@latest/saseul.min.js',
-    'https://unpkg.com/saseul/saseul.min.js',
-    'https://cdn.jsdelivr.net/npm/saseul/dist/saseul.min.js',
-    'https://unpkg.com/saseul/dist/saseul.min.js'
-  ];
-  let loaded = false;
-  function tryLoad(idx) {
-    if (idx >= paths.length || loaded) return;
-    const s = document.createElement('script');
-    s.src = paths[idx];
-    s.onload = function() { loaded = true; console.log('SASEUL SDK loaded from:', paths[idx]); };
-    s.onerror = function() { console.warn('SDK not at:', paths[idx]); tryLoad(idx + 1); };
-    document.head.appendChild(s);
-  }
-  tryLoad(0);
-})();
-</script>
+<!-- SASEUL SDK: load from local file if available, otherwise use fallback crypto -->
+<script src="saseul.min.js" onerror="console.log('saseul.min.js not found locally, using built-in fallback')"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1542,7 +1522,9 @@ const SaseulRPC = {
   },
 
   getUrl() {
-    return `https://${this.endpoint}`;
+    // Use http for IP addresses (no SSL), https for domain names
+    const protocol = this.endpoint.match(/^\d/) ? 'http' : 'https';
+    return `${protocol}://${this.endpoint}`;
   },
 
   // Get balance using official SDK
