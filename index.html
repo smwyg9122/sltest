@@ -1703,18 +1703,31 @@ function showToast(message, type = 'success') {
 }
 
 function copyToClipboard(text, message) {
-  navigator.clipboard.writeText(text).then(() => {
-    showToast(message || '복사되었습니다');
-  }).catch(() => {
-    // Fallback
+  // Use textarea fallback (works on HTTP, not just HTTPS)
+  try {
     const ta = document.createElement('textarea');
     ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.left = '-9999px';
+    ta.style.top = '-9999px';
     document.body.appendChild(ta);
+    ta.focus();
     ta.select();
     document.execCommand('copy');
     document.body.removeChild(ta);
     showToast(message || '복사되었습니다');
-  });
+  } catch(e) {
+    // Last resort: try clipboard API (HTTPS only)
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(() => {
+        showToast(message || '복사되었습니다');
+      }).catch(() => {
+        showToast('복사에 실패했습니다. 직접 선택하여 복사해 주세요.', 'error');
+      });
+    } else {
+      showToast('복사에 실패했습니다. 직접 선택하여 복사해 주세요.', 'error');
+    }
+  }
 }
 
 function closeModal(id) {
