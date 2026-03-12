@@ -867,7 +867,7 @@ textarea.input {
       <div class="logo-icon">SL</div>
       <div class="logo-text">
         SL Wallet
-        <span id="networkBadge" class="network-badge testnet">
+        <span id="networkBadge" class="network-badge mainnet">
           <span class="network-dot"></span>
           Mainnet
         </span>
@@ -1512,13 +1512,6 @@ const SaseulRPC = {
 
   setEndpoint(ep) {
     this.endpoint = ep.replace(/^https?:\/\//, '').replace(/\/$/, '');
-    if (useSaseulSDK) {
-      try {
-        SASEUL.Rpc.endpoint(this.endpoint);
-      } catch(e) {
-        try { SASEUL.Rpc.endpoints([this.endpoint]); } catch(e2) {}
-      }
-    }
   },
 
   getUrl() {
@@ -1527,43 +1520,15 @@ const SaseulRPC = {
     return `${protocol}://${this.endpoint}`;
   },
 
-  // Get balance using official SDK
+  // Always use manual HTTP requests (SDK RPC uses HTTPS internally which fails on HTTP nodes)
   async getBalance(address, privateKey) {
-    if (useSaseulSDK) {
-      try {
-        const signed = SASEUL.Rpc.signedRequest({
-          type: 'GetBalance',
-          address: address
-        }, privateKey);
-        return await SASEUL.Rpc.request(signed);
-      } catch(e) {
-        console.error('SDK getBalance error:', e);
-        throw e;
-      }
-    }
-    // Fallback: manual request
     return await this._manualRequest({
       type: 'GetBalance',
       address: address
     }, privateKey);
   },
 
-  // Send SL using official SDK
   async send(to, amount, privateKey) {
-    if (useSaseulSDK) {
-      try {
-        const signed = SASEUL.Rpc.signedTransaction({
-          type: 'Send',
-          to: to,
-          amount: amount
-        }, privateKey);
-        return await SASEUL.Rpc.broadcastTransaction(signed);
-      } catch(e) {
-        console.error('SDK send error:', e);
-        throw e;
-      }
-    }
-    // Fallback: manual transaction
     return await this._manualTransaction({
       type: 'Send',
       to: to,
@@ -1571,39 +1536,50 @@ const SaseulRPC = {
     }, privateKey);
   },
 
-  // Fallback: manual signed request
+  // Signed request via HTTP (uses SDK Sign if available)
   async _manualRequest(data, privateKey) {
-    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
-    const timestamp = Date.now() * 1000;
-    const requestData = { ...data, timestamp: timestamp.toString() };
-    const dataStr = JSON.stringify(requestData);
-    const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+    let payload;
+    if (useSaseulSDK) {
+      // Use SDK for correct signing, but send via our HTTP
+      payload = SASEUL.Rpc.signedRequest(data, privateKey);
+    } else {
+      const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+      const timestamp = Date.now() * 1000;
+      const requestData = { ...data, timestamp: timestamp.toString() };
+      const dataStr = JSON.stringify(requestData);
+      const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+      const seed = hexToBytes(privateKey);
+      const keypair = nacl.sign.keyPair.fromSeed(seed);
+      const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
+      payload = { request: dataStr, public_key: publicKey, signature: signature };
+    }
 
-    const seed = hexToBytes(privateKey);
-    const keypair = nacl.sign.keyPair.fromSeed(seed);
-    const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
-
-    const response = await axios.post(`${this.getUrl()}/request`, {
-      request: dataStr, public_key: publicKey, signature: signature
-    }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
+    const response = await axios.post(`${this.getUrl()}/request`, payload, {
+      timeout: 15000, headers: { 'Content-Type': 'application/json' }
+    });
     return response.data;
   },
 
-  // Fallback: manual signed transaction
+  // Signed transaction via HTTP (uses SDK Sign if available)
   async _manualTransaction(data, privateKey) {
-    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
-    const timestamp = Date.now() * 1000;
-    const txData = { ...data, timestamp: timestamp.toString() };
-    const dataStr = JSON.stringify(txData);
-    const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+    let payload;
+    if (useSaseulSDK) {
+      payload = SASEUL.Rpc.signedTransaction(data, privateKey);
+    } else {
+      const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+      const timestamp = Date.now() * 1000;
+      const txData = { ...data, timestamp: timestamp.toString() };
+      const dataStr = JSON.stringify(txData);
+      const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+      const seed = hexToBytes(privateKey);
+      const keypair = nacl.sign.keyPair.fromSeed(seed);
+      const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
+      payload = { transaction: dataStr, public_key: publicKey, signature: signature };
+    }
 
-    const seed = hexToBytes(privateKey);
-    const keypair = nacl.sign.keyPair.fromSeed(seed);
-    const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
-
-    const response = await axios.post(`${this.getUrl()}/transaction`, {
-      transaction: dataStr, public_key: publicKey, signature: signature
-    }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
+    const response = await axios.post(`${this.getUrl()}/transaction`, payload, {
+      timeout: 15000, headers: { 'Content-Type': 'application/json' }
+    });
     return response.data;
   },
 
@@ -2275,14 +2251,7 @@ async function init() {
   useSaseulSDK = (typeof SASEUL !== 'undefined');
   console.log('SASEUL SDK status:', useSaseulSDK ? 'LOADED (official)' : 'NOT FOUND (using fallback)');
 
-  // Set initial endpoint
-  if (useSaseulSDK) {
-    try {
-      SASEUL.Rpc.endpoint(wallet.endpoint);
-    } catch(e) {
-      try { SASEUL.Rpc.endpoints([wallet.endpoint]); } catch(e2) {}
-    }
-  }
+  // SDK is used for Sign only, RPC is handled via manual HTTP
 
   // Load BIP39 wordlist in background
   BIP39.load().then(ok => {
