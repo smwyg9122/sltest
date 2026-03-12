@@ -73,24 +73,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Background gradient effect */
-body::before {
-  content: '';
-  position: fixed;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(ellipse at 30% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
-              radial-gradient(ellipse at 70% 80%, rgba(0, 206, 201, 0.05) 0%, transparent 50%);
-  z-index: -1;
-  animation: bgShift 20s ease-in-out infinite alternate;
-}
-
-@keyframes bgShift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(-5%, -3%); }
-}
+/* Subtle background — no flashy gradients */
 
 .app {
   max-width: 480px;
@@ -132,13 +115,9 @@ body::before {
   filter: drop-shadow(0 2px 8px var(--accent-glow));
 }
 
-@keyframes logoSpin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
 .logo-icon:hover svg {
-  animation: logoSpin 1s ease-in-out;
+  transform: scale(1.08);
+  transition: transform 0.2s ease;
 }
 
 .logo-text {
@@ -209,18 +188,17 @@ body::before {
 .welcome-icon {
   width: 80px;
   height: 80px;
-  background: linear-gradient(135deg, var(--accent), var(--success));
-  border-radius: 24px;
+  border-radius: 20px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 36px;
-  margin-bottom: 24px;
-  box-shadow: 0 8px 32px var(--accent-glow);
+  margin-bottom: 28px;
 }
 
 .welcome h1 {
-  font-size: 28px;
+  font-size: 26px;
+  letter-spacing: -0.5px;
   font-weight: 700;
   letter-spacing: -1px;
   margin-bottom: 12px;
@@ -253,15 +231,14 @@ body::before {
 }
 
 .btn-primary {
-  background: var(--gradient);
+  background: var(--accent);
   color: white;
   border: none;
-  box-shadow: 0 4px 20px var(--accent-glow);
 }
 
 .btn-primary:hover {
+  background: var(--accent-light);
   transform: translateY(-1px);
-  box-shadow: 0 6px 24px var(--accent-glow);
 }
 
 .btn-secondary {
@@ -365,14 +342,11 @@ textarea.input {
 }
 
 .balance-amount {
-  font-size: 48px;
+  font-size: 44px;
   font-weight: 700;
-  letter-spacing: -2px;
+  letter-spacing: -1.5px;
   margin-bottom: 4px;
-  background: var(--gradient);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--text-primary);
 }
 
 .balance-unit {
@@ -449,9 +423,9 @@ textarea.input {
   font-size: 20px;
 }
 
-.action-icon.send { background: linear-gradient(135deg, var(--accent), #8b7cf7); }
-.action-icon.receive { background: linear-gradient(135deg, var(--success), #00b894); }
-.action-icon.history { background: linear-gradient(135deg, var(--warning), #ff9f43); }
+.action-icon.send { background: var(--accent); }
+.action-icon.receive { background: var(--success); }
+.action-icon.history { background: var(--warning); }
 
 /* Transaction list */
 .section-title {
@@ -977,7 +951,7 @@ textarea.input {
   <!-- Header -->
   <div class="header" id="mainHeader" style="display:none;">
     <div class="logo">
-      <div class="logo-icon"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="50%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#818cf8"/><stop offset="100%" style="stop-color:#22d3ee"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg1)"/><path d="M28 38c0-5 4-9 9-9h7c8 0 14 5 14 12 0 5-3 9-7 11l9 16h-11l-8-14h-3v14h-10V38zm10 8h5c3 0 5-2 5-4s-2-4-5-4h-5v8z" fill="white" opacity="0.95"/><circle cx="68" cy="62" r="16" fill="none" stroke="url(#lg2)" stroke-width="4"/><path d="M62 62l4 4 8-8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="logo-icon"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="hg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#hg)"/><g transform="translate(50,50)"><ellipse rx="14" ry="20" fill="none" stroke="white" stroke-width="5" transform="rotate(-30) translate(-10,0)"><animateTransform attributeName="transform" type="rotate" values="-30;-25;-30" dur="2s" repeatCount="indefinite" additive="sum"/></ellipse><ellipse rx="14" ry="20" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="5" transform="rotate(30) translate(10,0)"><animateTransform attributeName="transform" type="rotate" values="30;25;30" dur="2s" repeatCount="indefinite" additive="sum"/></ellipse></g></svg></div>
       <div class="logo-text">
         SL Wallet
         <span id="networkBadge" class="network-badge mainnet">
@@ -998,7 +972,7 @@ textarea.input {
   <!-- Welcome Screen -->
   <div class="screen active" id="welcomeScreen">
     <div class="welcome">
-      <div class="welcome-icon"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><linearGradient id="wlg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="50%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient><linearGradient id="wlg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#818cf8"/><stop offset="100%" style="stop-color:#22d3ee"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#wlg1)"/><path d="M28 38c0-5 4-9 9-9h7c8 0 14 5 14 12 0 5-3 9-7 11l9 16h-11l-8-14h-3v14h-10V38zm10 8h5c3 0 5-2 5-4s-2-4-5-4h-5v8z" fill="white" opacity="0.95"/><circle cx="68" cy="62" r="16" fill="none" stroke="url(#wlg2)" stroke-width="4"/><path d="M62 62l4 4 8-8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+      <div class="welcome-icon" style="background:none;box-shadow:none;"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="80" height="80"><defs><linearGradient id="wg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect width="100" height="100" rx="26" fill="url(#wg)"/><g transform="translate(50,50)"><ellipse rx="14" ry="22" fill="none" stroke="white" stroke-width="5.5" transform="rotate(-30) translate(-10,0)"><animateTransform attributeName="transform" type="rotate" values="-30;-22;-30" dur="3s" repeatCount="indefinite" additive="sum"/></ellipse><ellipse rx="14" ry="22" fill="none" stroke="rgba(255,255,255,0.7)" stroke-width="5.5" transform="rotate(30) translate(10,0)"><animateTransform attributeName="transform" type="rotate" values="30;22;30" dur="3s" repeatCount="indefinite" additive="sum"/></ellipse></g></svg></div>
       <h1>SL Wallet</h1>
       <p>SASEUL 블록체인을 위한 깔끔하고 빠른 지갑.<br>Guardee보다 더 간편하게.</p>
       <div class="btn-group">
@@ -1521,14 +1495,14 @@ textarea.input {
   <!-- Lock Screen -->
   <div class="screen" id="lockScreen">
     <div class="welcome">
-      <div class="welcome-icon">🔒</div>
-      <h1>지갑 잠김</h1>
-      <p>비밀번호를 입력하여 지갑을 잠금 해제하세요.</p>
+      <div class="welcome-icon" style="background:none;box-shadow:none;"><svg viewBox="0 0 100 100" width="64" height="64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lkg" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#6366f1"/><stop offset="100%" stop-color="#06b6d4"/></linearGradient></defs><rect x="25" y="45" width="50" height="38" rx="8" fill="url(#lkg)"/><path d="M35 45V35a15 15 0 0 1 30 0v10" fill="none" stroke="var(--text-muted)" stroke-width="5" stroke-linecap="round"><animate attributeName="d" values="M35 45V35a15 15 0 0 1 30 0v10;M35 45V33a15 15 0 0 1 30 0v6;M35 45V35a15 15 0 0 1 30 0v10" dur="2.5s" repeatCount="indefinite"/></path><circle cx="50" cy="60" r="4" fill="white"/><rect x="48" y="62" width="4" height="8" rx="2" fill="white"/></svg></div>
+      <h1 data-i18n="lock_title" style="margin-bottom:6px;">잠겨 있어요</h1>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:32px;" data-i18n="lock_desc">비밀번호를 입력해 주세요</p>
       <div class="btn-group">
         <div class="input-group">
-          <input type="password" class="input" id="unlockPassword" placeholder="비밀번호 입력" onkeypress="if(event.key==='Enter')unlockWallet()">
+          <input type="password" class="input" id="unlockPassword" placeholder="비밀번호" onkeypress="if(event.key==='Enter')unlockWallet()" style="text-align:center;">
         </div>
-        <button class="btn btn-primary" onclick="unlockWallet()">🔓 잠금 해제</button>
+        <button class="btn btn-primary" onclick="unlockWallet()" data-i18n="unlock_btn">열기</button>
       </div>
     </div>
   </div>
@@ -1546,10 +1520,6 @@ textarea.input {
     <button class="nav-item" onclick="navTo('receive', this)">
       <span class="nav-icon">↓</span>
       받기
-    </button>
-    <button class="nav-item" onclick="navTo('history', this)">
-      <span class="nav-icon">☰</span>
-      내역
     </button>
     <button class="nav-item" onclick="navTo('dapp', this)">
       <span class="nav-icon">◎</span>
@@ -1905,9 +1875,9 @@ function showScreen(name) {
   }
 
   // Update nav
-  if (['dashboard', 'send', 'receive', 'history', 'dapp', 'settings'].includes(name)) {
+  if (['dashboard', 'send', 'receive', 'dapp', 'settings'].includes(name)) {
     document.querySelectorAll('.nav-item').forEach((item, idx) => {
-      const targets = ['dashboard', 'send', 'receive', 'history', 'dapp', 'settings'];
+      const targets = ['dashboard', 'send', 'receive', 'dapp', 'settings'];
       item.classList.toggle('active', targets[idx] === name);
     });
   }
@@ -2898,7 +2868,10 @@ const LANG = {
     dapp_gold_desc: 'SASEUL 골드 생태계',
     dapp_coming: 'Coming Soon',
     dapp_coming_desc: '더 많은 dApp이 추가될 예정입니다',
-    back_dashboard: '대시보드'
+    back_dashboard: '대시보드',
+    lock_title: '잠겨 있어요',
+    lock_desc: '비밀번호를 입력해 주세요',
+    unlock_btn: '열기'
   },
   en: {
     welcome_title: 'SL Wallet',
@@ -2984,7 +2957,10 @@ const LANG = {
     dapp_gold_desc: 'SASEUL Gold ecosystem',
     dapp_coming: 'Coming Soon',
     dapp_coming_desc: 'More dApps will be added soon',
-    back_dashboard: 'Dashboard'
+    back_dashboard: 'Dashboard',
+    lock_title: 'Wallet Locked',
+    lock_desc: 'Enter your password',
+    unlock_btn: 'Unlock'
   }
 };
 
