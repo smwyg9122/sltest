@@ -1153,7 +1153,7 @@ textarea.input {
         <div class="setting-item">
           <div>
             <div class="setting-label">RPC 엔드포인트</div>
-            <div class="setting-desc" id="currentEndpoint">217.76.62.226</div>
+            <div class="setting-desc" id="currentEndpoint">217.76.62.226:9090</div>
           </div>
           <button class="btn btn-secondary btn-sm" onclick="showEndpointModal()">변경</button>
         </div>
@@ -1350,7 +1350,7 @@ let wallet = {
   address: null,
   name: 'SL Wallet',
   balance: '0',
-  endpoint: '217.76.62.226',
+  endpoint: '217.76.62.226:9090',
   transactions: []
 };
 
@@ -1528,7 +1528,7 @@ const BIP39 = {
 
 // --- SASEUL RPC Layer (Official SDK with fallback) ---
 const SaseulRPC = {
-  endpoint: '217.76.62.226',
+  endpoint: '217.76.62.226:9090',
 
   setEndpoint(ep) {
     this.endpoint = ep.replace(/^https?:\/\//, '').replace(/\/$/, '');
@@ -1934,7 +1934,7 @@ function unlockWallet() {
   wallet.address = data.address;
   wallet.mnemonic = data.mnemonic || null;
   wallet.name = data.name || 'SL Wallet';
-  wallet.endpoint = data.endpoint || '217.76.62.226';
+  wallet.endpoint = data.endpoint || '217.76.62.226:9090';
   wallet.transactions = data.transactions || [];
 
   SaseulRPC.setEndpoint(wallet.endpoint);
