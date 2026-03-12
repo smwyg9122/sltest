@@ -1584,7 +1584,7 @@ const SaseulRPC = {
     const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
 
     const response = await axios.post(`${this.getUrl()}/request`, {
-      data: dataStr, public_key: publicKey, signature: signature
+      request: dataStr, public_key: publicKey, signature: signature
     }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
     return response.data;
   },
@@ -1602,7 +1602,7 @@ const SaseulRPC = {
     const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
 
     const response = await axios.post(`${this.getUrl()}/transaction`, {
-      data: dataStr, public_key: publicKey, signature: signature
+      transaction: dataStr, public_key: publicKey, signature: signature
     }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
     return response.data;
   },
