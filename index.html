@@ -850,6 +850,77 @@ textarea.input {
   transition: width 0.3s ease, background 0.3s ease;
 }
 
+/* Wallet list items */
+.wallet-list-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: var(--bg-input);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.wallet-list-item:hover { border-color: var(--text-muted); }
+
+.wallet-list-item.active {
+  border-color: var(--accent);
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.wallet-list-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: white;
+  flex-shrink: 0;
+}
+
+.wallet-list-info { flex: 1; min-width: 0; }
+
+.wallet-list-name {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.wallet-list-addr {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wallet-list-check {
+  color: var(--accent-light);
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.wallet-delete-btn {
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 14px;
+  padding: 4px;
+  transition: var(--transition);
+  flex-shrink: 0;
+}
+
+.wallet-delete-btn:hover { color: var(--danger); }
+
 /* Responsive */
 @media (max-width: 480px) {
   .app { max-width: 100%; }
@@ -874,6 +945,7 @@ textarea.input {
       </div>
     </div>
     <div class="header-actions">
+      <button class="icon-btn" onclick="showWalletListModal()" title="지갑 전환">👛</button>
       <button class="icon-btn" onclick="refreshBalance()" title="새로고침">↻</button>
       <button class="icon-btn" onclick="showScreen('settings')" title="설정">⚙</button>
     </div>
@@ -1302,6 +1374,69 @@ textarea.input {
       <div style="display:flex;gap:10px;">
         <button class="btn btn-secondary" onclick="closeModal('changePasswordModal')" style="flex:1;">취소</button>
         <button class="btn btn-primary" onclick="changePassword()" style="flex:1;">변경</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Wallet List Modal -->
+  <div class="modal-overlay" id="walletListModal">
+    <div class="modal" style="max-height:80vh;overflow-y:auto;">
+      <h3>내 지갑</h3>
+      <p>지갑을 선택하거나 새로 추가하세요.</p>
+      <div id="walletListContainer" style="margin-bottom:16px;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-primary btn-sm" onclick="closeModal('walletListModal'); showAddWalletModal('create')" style="flex:1;">✦ 새 지갑</button>
+        <button class="btn btn-secondary btn-sm" onclick="closeModal('walletListModal'); showAddWalletModal('import')" style="flex:1;">↓ 가져오기</button>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="closeModal('walletListModal')" style="margin-top:10px;">닫기</button>
+    </div>
+  </div>
+
+  <!-- Add Wallet Modal -->
+  <div class="modal-overlay" id="addWalletModal">
+    <div class="modal">
+      <h3 id="addWalletTitle">지갑 추가</h3>
+      <p id="addWalletDesc">새 지갑을 만들거나 기존 프라이빗 키를 가져옵니다.</p>
+
+      <!-- Create mode -->
+      <div id="addWalletCreateSection">
+        <div class="input-group">
+          <label class="input-label">지갑 이름</label>
+          <input type="text" class="input" id="addWalletName" placeholder="예: 채굴 지갑" maxlength="30">
+        </div>
+      </div>
+
+      <!-- Import mode -->
+      <div id="addWalletImportSection" style="display:none;">
+        <div class="input-group">
+          <label class="input-label">지갑 이름</label>
+          <input type="text" class="input" id="addImportWalletName" placeholder="예: 메인 지갑" maxlength="30">
+        </div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;">
+          <button class="btn btn-sm" id="addImportTabSeed" onclick="switchAddImportTab('seed')" style="flex:1;background:var(--accent);color:white;">시드 문구</button>
+          <button class="btn btn-secondary btn-sm" id="addImportTabKey" onclick="switchAddImportTab('key')" style="flex:1;">프라이빗 키</button>
+        </div>
+        <div id="addImportSeedSection">
+          <div class="input-group">
+            <label class="input-label">시드 문구 (12단어)</label>
+            <textarea class="input" id="addImportSeed" placeholder="12개의 영단어를 공백으로 구분" rows="3"></textarea>
+          </div>
+        </div>
+        <div id="addImportKeySection" style="display:none;">
+          <div class="input-group">
+            <label class="input-label">프라이빗 키 (64자 hex)</label>
+            <textarea class="input input-mono" id="addImportKey" placeholder="프라이빗 키 붙여넣기..." rows="3"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">잠금 비밀번호</label>
+        <input type="password" class="input" id="addWalletPassword" placeholder="비밀번호 입력">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('addWalletModal')" style="flex:1;">취소</button>
+        <button class="btn btn-primary" onclick="executeAddWallet()" id="addWalletBtn" style="flex:1;">추가</button>
       </div>
     </div>
   </div>
@@ -1917,12 +2052,30 @@ function saveWallet(password) {
     transactions: wallet.transactions
   };
   const encrypted = encryptData(data, password);
-  localStorage.setItem('sl_wallet', encrypted);
-  localStorage.setItem('sl_wallet_address', wallet.address); // for display on lock screen
   encryptedStore = encrypted;
+
+  // Save to wallet list
+  const entry = walletList.find(w => w.id === activeWalletId);
+  if (entry) {
+    entry.encryptedData = encrypted;
+    entry.name = wallet.name;
+    entry.address = wallet.address;
+    saveWalletList();
+  } else {
+    localStorage.setItem('sl_wallet', encrypted);
+  }
 }
 
 function loadWallet() {
+  // Try multi-wallet list first
+  if (loadWalletList() && walletList.length > 0) {
+    const active = getActiveWalletData();
+    if (active) {
+      encryptedStore = active.encryptedData;
+      return true;
+    }
+  }
+  // Fallback to old single wallet
   const stored = localStorage.getItem('sl_wallet');
   if (stored) {
     encryptedStore = stored;
@@ -2347,6 +2500,234 @@ function drawQR(text) {
   ctx.font = 'bold 10px Inter';
   ctx.textAlign = 'center';
   ctx.fillText('SL WALLET', size/2, size/2 + 4);
+}
+
+// --- Multi-Wallet Management ---
+let walletList = []; // Array of { id, name, address, encryptedData }
+let activeWalletId = null;
+let addWalletMode = 'create'; // 'create' or 'import'
+let addImportMode = 'seed'; // 'seed' or 'key'
+
+function loadWalletList() {
+  try {
+    const stored = localStorage.getItem('sl_wallet_list');
+    if (stored) {
+      walletList = JSON.parse(stored);
+      activeWalletId = localStorage.getItem('sl_active_wallet') || (walletList[0] && walletList[0].id);
+      return true;
+    }
+  } catch(e) {}
+
+  // Migration: if old single wallet exists, convert to list format
+  const oldWallet = localStorage.getItem('sl_wallet');
+  if (oldWallet) {
+    const id = 'wallet_' + Date.now();
+    const addr = localStorage.getItem('sl_wallet_address') || '—';
+    walletList = [{ id: id, name: 'My Wallet', address: addr, encryptedData: oldWallet }];
+    activeWalletId = id;
+    saveWalletList();
+    localStorage.removeItem('sl_wallet');
+    localStorage.removeItem('sl_wallet_address');
+    return true;
+  }
+  return false;
+}
+
+function saveWalletList() {
+  localStorage.setItem('sl_wallet_list', JSON.stringify(walletList));
+  localStorage.setItem('sl_active_wallet', activeWalletId || '');
+}
+
+function getActiveWalletData() {
+  return walletList.find(w => w.id === activeWalletId);
+}
+
+function showWalletListModal() {
+  renderWalletList();
+  document.getElementById('walletListModal').classList.add('active');
+}
+
+function renderWalletList() {
+  const container = document.getElementById('walletListContainer');
+  if (walletList.length === 0) {
+    container.innerHTML = '<div class="empty-state" style="padding:20px;"><p>지갑이 없습니다</p></div>';
+    return;
+  }
+  container.innerHTML = walletList.map(w => `
+    <div class="wallet-list-item ${w.id === activeWalletId ? 'active' : ''}" onclick="switchWallet('${w.id}')">
+      <div class="wallet-list-icon">${(w.name || 'W')[0].toUpperCase()}</div>
+      <div class="wallet-list-info">
+        <div class="wallet-list-name">${w.name || 'Wallet'}</div>
+        <div class="wallet-list-addr">${w.address || '—'}</div>
+      </div>
+      ${w.id === activeWalletId ? '<span class="wallet-list-check">✓</span>' : ''}
+      ${walletList.length > 1 ? `<button class="wallet-delete-btn" onclick="event.stopPropagation(); deleteWallet('${w.id}')" title="삭제">✕</button>` : ''}
+    </div>
+  `).join('');
+}
+
+function switchWallet(walletId) {
+  const target = walletList.find(w => w.id === walletId);
+  if (!target) return;
+
+  activeWalletId = walletId;
+  saveWalletList();
+  encryptedStore = target.encryptedData;
+  closeModal('walletListModal');
+
+  // Need to unlock the wallet
+  showScreen('lock');
+}
+
+function deleteWallet(walletId) {
+  if (walletList.length <= 1) {
+    showToast('마지막 지갑은 삭제할 수 없습니다', 'error');
+    return;
+  }
+  const target = walletList.find(w => w.id === walletId);
+  if (!confirm(`"${target.name || 'Wallet'}" 지갑을 삭제하시겠습니까?\n프라이빗 키 없이는 복구할 수 없습니다!`)) return;
+
+  walletList = walletList.filter(w => w.id !== walletId);
+  if (activeWalletId === walletId) {
+    activeWalletId = walletList[0].id;
+    encryptedStore = walletList[0].encryptedData;
+  }
+  saveWalletList();
+  renderWalletList();
+  showToast('지갑이 삭제되었습니다');
+}
+
+function showAddWalletModal(mode) {
+  addWalletMode = mode;
+  document.getElementById('addWalletCreateSection').style.display = mode === 'create' ? 'block' : 'none';
+  document.getElementById('addWalletImportSection').style.display = mode === 'import' ? 'block' : 'none';
+  document.getElementById('addWalletTitle').textContent = mode === 'create' ? '✦ 새 지갑 만들기' : '↓ 지갑 가져오기';
+  document.getElementById('addWalletDesc').textContent = mode === 'create' ? '새 키 쌍이 생성됩니다.' : '시드 문구 또는 프라이빗 키로 가져옵니다.';
+  document.getElementById('addWalletPassword').value = '';
+  document.getElementById('addWalletModal').classList.add('active');
+}
+
+function switchAddImportTab(mode) {
+  addImportMode = mode;
+  document.getElementById('addImportSeedSection').style.display = mode === 'seed' ? 'block' : 'none';
+  document.getElementById('addImportKeySection').style.display = mode === 'key' ? 'block' : 'none';
+  document.getElementById('addImportTabSeed').className = mode === 'seed' ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('addImportTabSeed').style.cssText = mode === 'seed' ? 'flex:1;background:var(--accent);color:white;' : 'flex:1;';
+  document.getElementById('addImportTabKey').className = mode === 'key' ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('addImportTabKey').style.cssText = mode === 'key' ? 'flex:1;background:var(--accent);color:white;' : 'flex:1;';
+}
+
+function executeAddWallet() {
+  const password = document.getElementById('addWalletPassword').value;
+  if (!password || password.length < 6) {
+    showToast('비밀번호는 6자 이상이어야 합니다', 'error');
+    return;
+  }
+
+  let newPrivateKey, newPublicKey, newAddress, newMnemonic = null, newName;
+
+  if (addWalletMode === 'create') {
+    newName = document.getElementById('addWalletName').value || ('Wallet ' + (walletList.length + 1));
+    if (!BIP39.loaded) {
+      showToast('시드 문구 사전을 불러오는 중입니다', 'error');
+      return;
+    }
+    const mnemonic = BIP39.generateMnemonic(128);
+    const seedHex = BIP39.mnemonicToSeed(mnemonic);
+    const keypair = SaseulCrypto.keyPairFromSeed(seedHex);
+    newPrivateKey = keypair.privateKey;
+    newPublicKey = keypair.publicKey;
+    newAddress = keypair.address;
+    newMnemonic = mnemonic;
+
+    // Show seed phrase alert
+    alert('시드 문구를 안전하게 보관하세요:\n\n' + mnemonic.split(' ').map((w, i) => (i + 1) + '. ' + w).join('\n'));
+  } else {
+    newName = document.getElementById('addImportWalletName').value || ('Imported ' + (walletList.length + 1));
+    if (addImportMode === 'seed') {
+      const seedInput = document.getElementById('addImportSeed').value.trim();
+      if (!BIP39.loaded || !BIP39.validateMnemonic(seedInput)) {
+        showToast('유효하지 않은 시드 문구입니다', 'error');
+        return;
+      }
+      newMnemonic = seedInput;
+      newPrivateKey = BIP39.mnemonicToSeed(seedInput);
+    } else {
+      const keyInput = document.getElementById('addImportKey').value.trim();
+      if (!/^[a-fA-F0-9]{64}$/.test(keyInput)) {
+        showToast('유효하지 않은 프라이빗 키입니다', 'error');
+        return;
+      }
+      newPrivateKey = keyInput.toLowerCase();
+    }
+    newPublicKey = SaseulCrypto.publicKeyFromPrivate(newPrivateKey);
+    newAddress = SaseulCrypto.addressFromPublicKey(newPublicKey);
+  }
+
+  // Check for duplicate address
+  if (walletList.some(w => w.address === newAddress)) {
+    showToast('이미 등록된 주소입니다', 'error');
+    return;
+  }
+
+  // Encrypt and save
+  const walletData = {
+    privateKey: newPrivateKey,
+    publicKey: newPublicKey,
+    address: newAddress,
+    mnemonic: newMnemonic,
+    name: newName,
+    endpoint: wallet.endpoint || '217.76.62.226:9090',
+    transactions: []
+  };
+  const encrypted = encryptData(walletData, password);
+  const id = 'wallet_' + Date.now();
+
+  walletList.push({ id, name: newName, address: newAddress, encryptedData: encrypted });
+  activeWalletId = id;
+  saveWalletList();
+
+  // Load into current state
+  wallet.privateKey = newPrivateKey;
+  wallet.publicKey = newPublicKey;
+  wallet.address = newAddress;
+  wallet.mnemonic = newMnemonic;
+  wallet.name = newName;
+  wallet.balance = '0';
+  wallet.resource = '0';
+  wallet.transactions = [];
+  encryptedStore = encrypted;
+
+  closeModal('addWalletModal');
+  showToast(`"${newName}" 지갑이 추가되었습니다!`);
+  enterDashboard();
+}
+
+// Override saveWallet to update wallet list
+const _origSaveWallet = saveWallet;
+function saveWalletUpdated(password) {
+  const data = {
+    privateKey: wallet.privateKey,
+    publicKey: wallet.publicKey,
+    address: wallet.address,
+    mnemonic: wallet.mnemonic || null,
+    name: wallet.name,
+    endpoint: wallet.endpoint,
+    transactions: wallet.transactions
+  };
+  const encrypted = encryptData(data, password);
+  encryptedStore = encrypted;
+
+  // Update in wallet list
+  const entry = walletList.find(w => w.id === activeWalletId);
+  if (entry) {
+    entry.encryptedData = encrypted;
+    entry.name = wallet.name;
+    entry.address = wallet.address;
+    saveWalletList();
+  } else {
+    localStorage.setItem('sl_wallet', encrypted);
+  }
 }
 
 // --- Init ---
