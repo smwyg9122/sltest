@@ -1,0 +1,2257 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SL Wallet — SASEUL Chain Wallet</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg-primary: #0a0a0f;
+  --bg-secondary: #12121a;
+  --bg-card: #1a1a26;
+  --bg-input: #22222e;
+  --bg-hover: #2a2a38;
+  --text-primary: #f0f0f5;
+  --text-secondary: #8888a0;
+  --text-muted: #555568;
+  --accent: #6c5ce7;
+  --accent-light: #a29bfe;
+  --accent-glow: rgba(108, 92, 231, 0.3);
+  --success: #00cec9;
+  --success-glow: rgba(0, 206, 201, 0.2);
+  --danger: #ff6b6b;
+  --danger-glow: rgba(255, 107, 107, 0.2);
+  --warning: #feca57;
+  --border: #2a2a38;
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  --transition: all 0.2s ease;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background gradient effect */
+body::before {
+  content: '';
+  position: fixed;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(ellipse at 30% 20%, rgba(108, 92, 231, 0.08) 0%, transparent 50%),
+              radial-gradient(ellipse at 70% 80%, rgba(0, 206, 201, 0.05) 0%, transparent 50%);
+  z-index: -1;
+  animation: bgShift 20s ease-in-out infinite alternate;
+}
+
+@keyframes bgShift {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-5%, -3%); }
+}
+
+.app {
+  max-width: 480px;
+  margin: 0 auto;
+  min-height: 100vh;
+  position: relative;
+}
+
+/* Header */
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(20px);
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: rgba(10, 10, 15, 0.8);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo-icon {
+  width: 36px;
+  height: 36px;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 16px;
+  color: white;
+}
+
+.logo-text {
+  font-size: 18px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+}
+
+.logo-text span {
+  color: var(--text-muted);
+  font-weight: 400;
+  font-size: 12px;
+  margin-left: 6px;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.icon-btn {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: var(--bg-card);
+  border-radius: var(--radius-sm);
+  color: var(--text-secondary);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition);
+  font-size: 18px;
+}
+
+.icon-btn:hover {
+  background: var(--bg-hover);
+  color: var(--text-primary);
+}
+
+/* Screens */
+.screen {
+  display: none;
+  padding: 24px;
+  animation: fadeIn 0.3s ease;
+}
+
+.screen.active {
+  display: block;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* Welcome Screen */
+.welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 80px);
+  text-align: center;
+  padding: 40px 24px;
+}
+
+.welcome-icon {
+  width: 80px;
+  height: 80px;
+  background: linear-gradient(135deg, var(--accent), var(--success));
+  border-radius: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 36px;
+  margin-bottom: 24px;
+  box-shadow: 0 8px 32px var(--accent-glow);
+}
+
+.welcome h1 {
+  font-size: 28px;
+  font-weight: 700;
+  letter-spacing: -1px;
+  margin-bottom: 12px;
+}
+
+.welcome p {
+  color: var(--text-secondary);
+  font-size: 15px;
+  line-height: 1.6;
+  margin-bottom: 40px;
+  max-width: 340px;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 28px;
+  border: none;
+  border-radius: var(--radius);
+  font-family: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: var(--transition);
+  width: 100%;
+  letter-spacing: -0.2px;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, var(--accent), #8b7cf7);
+  color: white;
+  box-shadow: 0 4px 16px var(--accent-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 24px var(--accent-glow);
+}
+
+.btn-secondary {
+  background: var(--bg-card);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-hover);
+  border-color: var(--text-muted);
+}
+
+.btn-danger {
+  background: var(--danger);
+  color: white;
+}
+
+.btn-sm {
+  padding: 10px 18px;
+  font-size: 13px;
+}
+
+.btn-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  width: 100%;
+  max-width: 320px;
+}
+
+/* Input */
+.input-group {
+  margin-bottom: 20px;
+}
+
+.input-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+}
+
+.input {
+  width: 100%;
+  padding: 14px 16px;
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 15px;
+  transition: var(--transition);
+  outline: none;
+}
+
+.input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.input-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+}
+
+textarea.input {
+  resize: vertical;
+  min-height: 80px;
+}
+
+/* Cards */
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 20px;
+  margin-bottom: 16px;
+  transition: var(--transition);
+}
+
+.card:hover {
+  border-color: var(--text-muted);
+}
+
+/* Balance Display */
+.balance-section {
+  text-align: center;
+  padding: 32px 0;
+}
+
+.balance-label {
+  font-size: 13px;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  margin-bottom: 8px;
+}
+
+.balance-amount {
+  font-size: 42px;
+  font-weight: 700;
+  letter-spacing: -2px;
+  margin-bottom: 4px;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent-light));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.balance-unit {
+  font-size: 14px;
+  color: var(--text-secondary);
+}
+
+.address-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 16px;
+  padding: 10px 16px;
+  background: var(--bg-input);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.address-display:hover {
+  background: var(--bg-hover);
+}
+
+.address-text {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.copy-icon {
+  font-size: 14px;
+  color: var(--accent-light);
+}
+
+/* Action buttons row */
+.action-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 24px 0;
+}
+
+.action-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 8px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  color: var(--text-primary);
+  cursor: pointer;
+  transition: var(--transition);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.action-btn:hover {
+  background: var(--bg-hover);
+  border-color: var(--accent);
+  transform: translateY(-2px);
+}
+
+.action-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.action-icon.send { background: linear-gradient(135deg, var(--accent), #8b7cf7); }
+.action-icon.receive { background: linear-gradient(135deg, var(--success), #00b894); }
+.action-icon.history { background: linear-gradient(135deg, var(--warning), #ff9f43); }
+
+/* Transaction list */
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.tx-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--border);
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.tx-item:last-child { border-bottom: none; }
+
+.tx-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+
+.tx-icon.sent { background: var(--danger-glow); color: var(--danger); }
+.tx-icon.received { background: var(--success-glow); color: var(--success); }
+
+.tx-info { flex: 1; min-width: 0; }
+
+.tx-type {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 2px;
+}
+
+.tx-address {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tx-amount {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.tx-amount-value {
+  font-size: 14px;
+  font-weight: 600;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.tx-amount-value.negative { color: var(--danger); }
+.tx-amount-value.positive { color: var(--success); }
+
+.tx-time {
+  font-size: 11px;
+  color: var(--text-muted);
+}
+
+/* Empty state */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-muted);
+}
+
+.empty-state .icon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.5;
+}
+
+.empty-state p {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+/* Back button */
+.back-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+  cursor: pointer;
+  color: var(--text-secondary);
+  font-size: 14px;
+  transition: var(--transition);
+}
+
+.back-row:hover { color: var(--text-primary); }
+
+/* Network badge */
+.network-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 500;
+}
+
+.network-badge.mainnet {
+  background: var(--success-glow);
+  color: var(--success);
+}
+
+.network-badge.testnet {
+  background: rgba(254, 202, 87, 0.15);
+  color: var(--warning);
+}
+
+.network-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
+}
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  padding: 14px 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  font-size: 14px;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  box-shadow: var(--shadow);
+  max-width: 400px;
+  text-align: center;
+}
+
+.toast.show {
+  transform: translateX(-50%) translateY(0);
+}
+
+.toast.success { border-color: var(--success); color: var(--success); }
+.toast.error { border-color: var(--danger); color: var(--danger); }
+
+/* Spinner */
+.spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Modal */
+.modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.7);
+  z-index: 200;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  backdrop-filter: blur(4px);
+}
+
+.modal-overlay.active {
+  display: flex;
+}
+
+.modal {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+  animation: modalIn 0.3s ease;
+}
+
+@keyframes modalIn {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+.modal h3 {
+  font-size: 18px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.modal p {
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 20px;
+  line-height: 1.5;
+}
+
+/* Key display */
+.key-box {
+  background: var(--bg-input);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 14px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  word-break: break-all;
+  line-height: 1.6;
+  color: var(--accent-light);
+  cursor: pointer;
+  transition: var(--transition);
+  margin-bottom: 16px;
+}
+
+.key-box:hover {
+  border-color: var(--accent);
+}
+
+/* Settings items */
+.setting-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.setting-item:last-child { border-bottom: none; }
+
+.setting-label {
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.setting-desc {
+  font-size: 12px;
+  color: var(--text-muted);
+  margin-top: 2px;
+}
+
+/* Nav bar */
+.nav-bar {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 480px;
+  display: flex;
+  background: rgba(18, 18, 26, 0.95);
+  backdrop-filter: blur(20px);
+  border-top: 1px solid var(--border);
+  padding: 8px 0;
+  padding-bottom: max(8px, env(safe-area-inset-bottom));
+  z-index: 100;
+}
+
+.nav-item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  background: none;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 11px;
+  transition: var(--transition);
+}
+
+.nav-item.active { color: var(--accent-light); }
+.nav-item:hover { color: var(--text-secondary); }
+.nav-icon { font-size: 22px; }
+
+.main-content {
+  padding-bottom: 80px;
+}
+
+/* Amount input special */
+.amount-input-wrap {
+  text-align: center;
+  padding: 20px 0;
+}
+
+.amount-large {
+  font-size: 48px;
+  font-weight: 700;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  text-align: center;
+  width: 100%;
+  outline: none;
+  font-family: inherit;
+  letter-spacing: -2px;
+}
+
+.amount-large::placeholder {
+  color: var(--text-muted);
+}
+
+.amount-sub {
+  font-size: 13px;
+  color: var(--text-muted);
+  margin-top: 4px;
+}
+
+/* Confirm details */
+.confirm-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.confirm-row:last-child { border-bottom: none; }
+
+.confirm-label {
+  font-size: 13px;
+  color: var(--text-secondary);
+}
+
+.confirm-value {
+  font-size: 14px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  text-align: right;
+  max-width: 60%;
+  word-break: break-all;
+}
+
+/* Seed phrase grid */
+.seed-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  margin-bottom: 20px;
+}
+
+.seed-word {
+  padding: 10px;
+  background: var(--bg-input);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  text-align: center;
+}
+
+.seed-word .num {
+  color: var(--text-muted);
+  font-size: 10px;
+  margin-right: 4px;
+}
+
+/* Status indicator */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  margin-bottom: 16px;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.status-dot.connected { background: var(--success); }
+.status-dot.disconnected { background: var(--danger); }
+
+/* QR placeholder */
+.qr-placeholder {
+  width: 200px;
+  height: 200px;
+  background: white;
+  border-radius: var(--radius);
+  margin: 0 auto 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  color: #333;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* Password strength */
+.strength-bar {
+  height: 3px;
+  background: var(--bg-input);
+  border-radius: 2px;
+  margin-top: 8px;
+  overflow: hidden;
+}
+
+.strength-fill {
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease, background 0.3s ease;
+}
+
+/* Responsive */
+@media (max-width: 480px) {
+  .app { max-width: 100%; }
+  .balance-amount { font-size: 36px; }
+  .amount-large { font-size: 36px; }
+}
+</style>
+</head>
+<body>
+
+<div class="app" id="app">
+  <!-- Header -->
+  <div class="header" id="mainHeader" style="display:none;">
+    <div class="logo">
+      <div class="logo-icon">SL</div>
+      <div class="logo-text">
+        SL Wallet
+        <span id="networkBadge" class="network-badge testnet">
+          <span class="network-dot"></span>
+          Mainnet
+        </span>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" onclick="refreshBalance()" title="새로고침">↻</button>
+      <button class="icon-btn" onclick="showScreen('settings')" title="설정">⚙</button>
+    </div>
+  </div>
+
+  <!-- Welcome Screen -->
+  <div class="screen active" id="welcomeScreen">
+    <div class="welcome">
+      <div class="welcome-icon">⛓</div>
+      <h1>SL Wallet</h1>
+      <p>SASEUL 블록체인을 위한 깔끔하고 빠른 지갑.<br>Guardee보다 더 간편하게.</p>
+      <div class="btn-group">
+        <button class="btn btn-primary" onclick="showScreen('createWallet')">
+          ✦ 새 지갑 만들기
+        </button>
+        <button class="btn btn-secondary" onclick="showScreen('importWallet')">
+          ↓ 기존 지갑 가져오기
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Create Wallet Screen -->
+  <div class="screen" id="createWalletScreen">
+    <div class="back-row" onclick="showScreen('welcome')">← 돌아가기</div>
+    <h2 style="margin-bottom:8px;">새 지갑 만들기</h2>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;line-height:1.6;">
+      새로운 키 쌍이 생성됩니다. 프라이빗 키를 반드시 안전하게 보관하세요.
+    </p>
+    <div class="input-group">
+      <label class="input-label">지갑 이름 (선택사항)</label>
+      <input type="text" class="input" id="walletName" placeholder="예: 내 메인 지갑" maxlength="30">
+    </div>
+    <div class="input-group">
+      <label class="input-label">잠금 비밀번호</label>
+      <input type="password" class="input" id="walletPassword" placeholder="지갑 암호화에 사용됩니다">
+      <div class="strength-bar"><div class="strength-fill" id="strengthFill"></div></div>
+    </div>
+    <div class="input-group">
+      <label class="input-label">비밀번호 확인</label>
+      <input type="password" class="input" id="walletPasswordConfirm" placeholder="비밀번호를 다시 입력하세요">
+    </div>
+    <button class="btn btn-primary" onclick="createWallet()" id="createBtn">✦ 지갑 생성</button>
+  </div>
+
+  <!-- Backup Screen (after creation) -->
+  <div class="screen" id="backupScreen">
+    <h2 style="margin-bottom:8px;">시드 문구 백업</h2>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;line-height:1.6;">
+      아래 12개의 단어를 <strong>순서대로</strong> 안전한 곳에 적어 보관하세요.<br>
+      <strong style="color:var(--danger);">이 시드 문구를 잃어버리면 지갑을 복구할 수 없습니다!</strong>
+    </p>
+
+    <div class="seed-grid" id="seedPhraseGrid"></div>
+
+    <button class="btn btn-secondary btn-sm" style="margin-bottom:20px;" onclick="copySeedPhrase()">
+      ⎘ 시드 문구 전체 복사
+    </button>
+
+    <details style="margin-bottom:16px;">
+      <summary style="cursor:pointer;color:var(--text-secondary);font-size:13px;margin-bottom:8px;">고급: 프라이빗 키 / 주소 보기</summary>
+      <div style="margin-top:12px;">
+        <label class="input-label">프라이빗 키</label>
+        <div class="key-box" id="backupPrivateKey" onclick="copyToClipboard(this.textContent, '프라이빗 키가 복사되었습니다')"></div>
+        <label class="input-label">퍼블릭 키</label>
+        <div class="key-box" id="backupPublicKey" onclick="copyToClipboard(this.textContent, '퍼블릭 키가 복사되었습니다')" style="color:var(--success);"></div>
+        <label class="input-label">주소</label>
+        <div class="key-box" id="backupAddress" onclick="copyToClipboard(this.textContent, '주소가 복사되었습니다')" style="color:var(--warning);"></div>
+      </div>
+    </details>
+
+    <div style="margin-top:8px;">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;font-size:13px;color:var(--text-secondary);">
+        <input type="checkbox" id="backupConfirm" onchange="document.getElementById('goToDashboard').disabled = !this.checked">
+        시드 문구를 안전하게 저장했음을 확인합니다
+      </label>
+    </div>
+    <button class="btn btn-primary" id="goToDashboard" onclick="enterDashboard()" disabled style="margin-top:16px;">
+      지갑 열기 →
+    </button>
+  </div>
+
+  <!-- Import Wallet Screen -->
+  <div class="screen" id="importWalletScreen">
+    <div class="back-row" onclick="showScreen('welcome')">← 돌아가기</div>
+    <h2 style="margin-bottom:8px;">지갑 가져오기</h2>
+    <p style="color:var(--text-secondary);font-size:14px;margin-bottom:20px;line-height:1.6;">
+      시드 문구 또는 프라이빗 키로 기존 지갑을 복구하세요.
+    </p>
+
+    <!-- Import method toggle -->
+    <div style="display:flex;gap:8px;margin-bottom:20px;">
+      <button class="btn btn-sm" id="importTabSeed" onclick="switchImportTab('seed')" style="flex:1;background:var(--accent);color:white;">시드 문구</button>
+      <button class="btn btn-secondary btn-sm" id="importTabKey" onclick="switchImportTab('key')" style="flex:1;">프라이빗 키</button>
+    </div>
+
+    <div id="importSeedSection">
+      <div class="input-group">
+        <label class="input-label">시드 문구 (12단어)</label>
+        <textarea class="input" id="importSeed" placeholder="12개의 영단어를 공백으로 구분하여 입력하세요&#10;예: word1 word2 word3 ..." rows="3" style="font-size:14px;"></textarea>
+      </div>
+    </div>
+
+    <div id="importKeySection" style="display:none;">
+      <div class="input-group">
+        <label class="input-label">프라이빗 키 (64자 hex)</label>
+        <textarea class="input input-mono" id="importKey" placeholder="프라이빗 키를 여기에 붙여넣기..." rows="3"></textarea>
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label class="input-label">잠금 비밀번호</label>
+      <input type="password" class="input" id="importPassword" placeholder="지갑 암호화에 사용됩니다">
+    </div>
+    <button class="btn btn-primary" onclick="importWallet()" id="importBtn">↓ 가져오기</button>
+  </div>
+
+  <!-- Dashboard -->
+  <div class="screen" id="dashboardScreen">
+    <div class="main-content">
+      <div class="balance-section">
+        <div class="balance-label">총 잔액</div>
+        <div class="balance-amount" id="balanceDisplay">0.00</div>
+        <div class="balance-unit">SL</div>
+        <div class="address-display" onclick="copyToClipboard(wallet.address, '주소가 복사되었습니다')">
+          <span class="address-text" id="addressShort">—</span>
+          <span class="copy-icon">⎘</span>
+        </div>
+      </div>
+
+      <div class="action-row">
+        <button class="action-btn" onclick="showScreen('send')">
+          <div class="action-icon send">↑</div>
+          보내기
+        </button>
+        <button class="action-btn" onclick="showScreen('receive')">
+          <div class="action-icon receive">↓</div>
+          받기
+        </button>
+        <button class="action-btn" onclick="showScreen('history')">
+          <div class="action-icon history">☰</div>
+          내역
+        </button>
+      </div>
+
+      <div class="card">
+        <div class="section-title">
+          최근 트랜잭션
+          <span style="font-size:12px;color:var(--text-muted);cursor:pointer;" onclick="showScreen('history')">전체보기 →</span>
+        </div>
+        <div id="recentTxList">
+          <div class="empty-state">
+            <div class="icon">📭</div>
+            <p>아직 트랜잭션이 없습니다</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Send Screen -->
+  <div class="screen" id="sendScreen">
+    <div class="main-content">
+      <div class="back-row" onclick="showScreen('dashboard')">← 대시보드</div>
+      <h2 style="margin-bottom:24px;">SL 보내기</h2>
+
+      <div class="amount-input-wrap">
+        <input type="number" class="amount-large" id="sendAmount" placeholder="0" step="any" min="0">
+        <div class="amount-sub">SL · <span id="sendAvailable">사용 가능: 0.00 SL</span></div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">받는 주소</label>
+        <input type="text" class="input input-mono" id="sendTo" placeholder="받는 사람의 SASEUL 주소">
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">메모 (선택사항)</label>
+        <input type="text" class="input" id="sendMemo" placeholder="트랜잭션 메모">
+      </div>
+
+      <button class="btn btn-primary" onclick="confirmSend()" id="sendBtn">
+        전송 확인 →
+      </button>
+    </div>
+  </div>
+
+  <!-- Send Confirm Modal -->
+  <div class="modal-overlay" id="sendConfirmModal">
+    <div class="modal">
+      <h3>전송 확인</h3>
+      <p>아래 내용을 확인 후 전송하세요.</p>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="confirm-row">
+          <span class="confirm-label">수량</span>
+          <span class="confirm-value" id="confirmAmount">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">받는 주소</span>
+          <span class="confirm-value" id="confirmTo" style="font-size:11px;">—</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">네트워크</span>
+          <span class="confirm-value" id="confirmNetwork">—</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('sendConfirmModal')" style="flex:1;">취소</button>
+        <button class="btn btn-primary" onclick="executeSend()" id="execSendBtn" style="flex:1;">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Receive Screen -->
+  <div class="screen" id="receiveScreen">
+    <div class="main-content">
+      <div class="back-row" onclick="showScreen('dashboard')">← 대시보드</div>
+      <h2 style="margin-bottom:8px;text-align:center;">SL 받기</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;text-align:center;">
+        아래 주소로 SL을 보내달라고 요청하세요.
+      </p>
+
+      <div class="qr-placeholder" id="qrCode">
+        <canvas id="qrCanvas" width="200" height="200"></canvas>
+      </div>
+
+      <div class="card" style="text-align:center;">
+        <div class="input-label" style="margin-bottom:10px;">내 주소</div>
+        <div class="key-box" id="receiveAddress" onclick="copyToClipboard(wallet.address, '주소가 복사되었습니다')" style="margin-bottom:8px;"></div>
+        <button class="btn btn-secondary btn-sm" onclick="copyToClipboard(wallet.address, '주소가 복사되었습니다')">⎘ 주소 복사</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Screen -->
+  <div class="screen" id="historyScreen">
+    <div class="main-content">
+      <div class="back-row" onclick="showScreen('dashboard')">← 대시보드</div>
+      <h2 style="margin-bottom:24px;">트랜잭션 내역</h2>
+      <div id="fullTxList">
+        <div class="empty-state">
+          <div class="icon">📭</div>
+          <p>트랜잭션 내역이 없습니다</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Screen -->
+  <div class="screen" id="settingsScreen">
+    <div class="main-content">
+      <div class="back-row" onclick="showScreen('dashboard')">← 대시보드</div>
+      <h2 style="margin-bottom:24px;">설정</h2>
+
+      <div class="card">
+        <div class="section-title" style="margin-bottom:0;">네트워크</div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">RPC 엔드포인트</div>
+            <div class="setting-desc" id="currentEndpoint">main.saseul.net</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showEndpointModal()">변경</button>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">네트워크 상태</div>
+            <div class="status-row" style="margin:4px 0 0 0;">
+              <span class="status-dot" id="statusDot"></span>
+              <span id="statusText">확인 중...</span>
+            </div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="checkConnection()">테스트</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin-bottom:0;">보안</div>
+        <div class="setting-item" id="seedPhraseSettingItem" style="display:none;">
+          <div>
+            <div class="setting-label">시드 문구 보기</div>
+            <div class="setting-desc">12단어 복구 문구를 확인합니다</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showSeedPhraseModal()">보기</button>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">프라이빗 키 보기</div>
+            <div class="setting-desc">암호화된 키를 확인합니다</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showPrivateKeyModal()">보기</button>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">비밀번호 변경</div>
+            <div class="setting-desc">잠금 비밀번호를 변경합니다</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="showChangePasswordModal()">변경</button>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="section-title" style="margin-bottom:0;">지갑</div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">지갑 이름</div>
+            <div class="setting-desc" id="settingsWalletName">—</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="renameWallet()">수정</button>
+        </div>
+        <div class="setting-item">
+          <div>
+            <div class="setting-label">지갑 초기화</div>
+            <div class="setting-desc" style="color:var(--danger);">모든 데이터가 삭제됩니다</div>
+          </div>
+          <button class="btn btn-danger btn-sm" onclick="resetWallet()">초기화</button>
+        </div>
+      </div>
+
+      <div style="text-align:center;margin-top:24px;color:var(--text-muted);font-size:12px;">
+        SL Wallet v1.0.0 · SASEUL Network<br>
+        Built with ❤ by dan
+      </div>
+    </div>
+  </div>
+
+  <!-- Endpoint Modal -->
+  <div class="modal-overlay" id="endpointModal">
+    <div class="modal">
+      <h3>RPC 엔드포인트 변경</h3>
+      <p>SASEUL 노드의 엔드포인트를 입력하세요.</p>
+      <div class="input-group">
+        <input type="text" class="input input-mono" id="endpointInput" placeholder="예: test.saseul.net">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('endpointModal')" style="flex:1;">취소</button>
+        <button class="btn btn-primary" onclick="changeEndpoint()" style="flex:1;">저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Seed Phrase Modal -->
+  <div class="modal-overlay" id="seedPhraseModal">
+    <div class="modal">
+      <h3>시드 문구 확인</h3>
+      <p>비밀번호를 입력하여 시드 문구를 확인하세요.</p>
+      <div class="input-group">
+        <input type="password" class="input" id="seedModalPassword" placeholder="비밀번호 입력">
+      </div>
+      <div class="seed-grid" id="seedModalGrid" style="display:none;"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('seedPhraseModal'); document.getElementById('seedModalGrid').style.display='none'; document.getElementById('seedModalPassword').value='';" style="flex:1;">닫기</button>
+        <button class="btn btn-primary" onclick="revealSeedPhrase()" style="flex:1;">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Private Key Modal -->
+  <div class="modal-overlay" id="privateKeyModal">
+    <div class="modal">
+      <h3>프라이빗 키 확인</h3>
+      <p>비밀번호를 입력하여 프라이빗 키를 확인하세요.</p>
+      <div class="input-group">
+        <input type="password" class="input" id="pkPassword" placeholder="비밀번호 입력">
+      </div>
+      <div class="key-box" id="pkDisplay" style="display:none;cursor:pointer;" onclick="copyToClipboard(this.textContent, '프라이빗 키가 복사되었습니다')"></div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('privateKeyModal'); document.getElementById('pkDisplay').style.display='none'; document.getElementById('pkPassword').value='';" style="flex:1;">닫기</button>
+        <button class="btn btn-primary" onclick="revealPrivateKey()" style="flex:1;">확인</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Change Password Modal -->
+  <div class="modal-overlay" id="changePasswordModal">
+    <div class="modal">
+      <h3>비밀번호 변경</h3>
+      <p>현재 비밀번호와 새 비밀번호를 입력하세요.</p>
+      <div class="input-group">
+        <label class="input-label">현재 비밀번호</label>
+        <input type="password" class="input" id="currentPw" placeholder="현재 비밀번호">
+      </div>
+      <div class="input-group">
+        <label class="input-label">새 비밀번호</label>
+        <input type="password" class="input" id="newPw" placeholder="새 비밀번호">
+      </div>
+      <div class="input-group">
+        <label class="input-label">새 비밀번호 확인</label>
+        <input type="password" class="input" id="newPwConfirm" placeholder="새 비밀번호 확인">
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('changePasswordModal')" style="flex:1;">취소</button>
+        <button class="btn btn-primary" onclick="changePassword()" style="flex:1;">변경</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Lock Screen -->
+  <div class="screen" id="lockScreen">
+    <div class="welcome">
+      <div class="welcome-icon">🔒</div>
+      <h1>지갑 잠김</h1>
+      <p>비밀번호를 입력하여 지갑을 잠금 해제하세요.</p>
+      <div class="btn-group">
+        <div class="input-group">
+          <input type="password" class="input" id="unlockPassword" placeholder="비밀번호 입력" onkeypress="if(event.key==='Enter')unlockWallet()">
+        </div>
+        <button class="btn btn-primary" onclick="unlockWallet()">🔓 잠금 해제</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Nav Bar -->
+  <div class="nav-bar" id="navBar" style="display:none;">
+    <button class="nav-item active" onclick="navTo('dashboard', this)">
+      <span class="nav-icon">◉</span>
+      대시보드
+    </button>
+    <button class="nav-item" onclick="navTo('send', this)">
+      <span class="nav-icon">↑</span>
+      보내기
+    </button>
+    <button class="nav-item" onclick="navTo('receive', this)">
+      <span class="nav-icon">↓</span>
+      받기
+    </button>
+    <button class="nav-item" onclick="navTo('history', this)">
+      <span class="nav-icon">☰</span>
+      내역
+    </button>
+    <button class="nav-item" onclick="navTo('settings', this)">
+      <span class="nav-icon">⚙</span>
+      설정
+    </button>
+  </div>
+
+  <!-- Toast -->
+  <div class="toast" id="toast"></div>
+</div>
+
+<script>
+// ============================================================
+// SL Wallet — SASEUL Chain Wallet
+// Crypto: Ed25519 (tweetnacl) + SHA-256 + RIPEMD-160 (crypto-js)
+// ============================================================
+
+// --- Wallet State ---
+let wallet = {
+  privateKey: null,
+  publicKey: null,
+  address: null,
+  name: 'SL Wallet',
+  balance: '0',
+  endpoint: 'main.saseul.net',
+  transactions: []
+};
+
+let encryptedStore = null;
+
+// --- Utility: Hex <-> Uint8Array ---
+function hexToBytes(hex) {
+  const bytes = new Uint8Array(hex.length / 2);
+  for (let i = 0; i < hex.length; i += 2) {
+    bytes[i / 2] = parseInt(hex.substr(i, 2), 16);
+  }
+  return bytes;
+}
+
+function bytesToHex(bytes) {
+  return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
+// --- SASEUL Crypto Implementation ---
+const SaseulCrypto = {
+  // Generate a new Ed25519 key pair
+  generateKeyPair() {
+    const keypair = nacl.sign.keyPair();
+    const privateKey = bytesToHex(keypair.secretKey.slice(0, 32));
+    const publicKey = bytesToHex(keypair.publicKey);
+    const address = this.publicKeyToAddress(publicKey);
+    return { privateKey, publicKey, address };
+  },
+
+  // Derive public key from private key
+  publicKeyFromPrivate(privateKeyHex) {
+    const seed = hexToBytes(privateKeyHex);
+    const keypair = nacl.sign.keyPair.fromSeed(seed);
+    return bytesToHex(keypair.publicKey);
+  },
+
+  // Derive SASEUL address from public key
+  // Address = RIPEMD160(SHA256(publicKey)) + checksum
+  publicKeyToAddress(publicKeyHex) {
+    // SHA-256 of public key
+    const sha256Hash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(publicKeyHex));
+    // RIPEMD-160 of SHA-256 result
+    const ripemd160Hash = CryptoJS.RIPEMD160(sha256Hash);
+    const hashHex = ripemd160Hash.toString(CryptoJS.enc.Hex);
+    // Checksum: first 2 bytes of SHA-256(SHA-256(ripemd160Hash))
+    const checksum1 = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(hashHex));
+    const checksum2 = CryptoJS.SHA256(checksum1);
+    const checksumHex = checksum2.toString(CryptoJS.enc.Hex).slice(0, 4);
+    return hashHex + checksumHex;
+  },
+
+  // Sign data with private key
+  sign(dataHex, privateKeyHex) {
+    const seed = hexToBytes(privateKeyHex);
+    const keypair = nacl.sign.keyPair.fromSeed(seed);
+    const message = hexToBytes(dataHex);
+    const signature = nacl.sign.detached(message, keypair.secretKey);
+    return bytesToHex(signature);
+  },
+
+  // Hash string data to hex (SHA-256)
+  hashString(str) {
+    return CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
+  },
+
+  // Generate key pair from a 32-byte seed (hex)
+  keyPairFromSeed(seedHex) {
+    const seed = hexToBytes(seedHex);
+    const keypair = nacl.sign.keyPair.fromSeed(seed);
+    const privateKey = bytesToHex(seed);
+    const publicKey = bytesToHex(keypair.publicKey);
+    const address = this.publicKeyToAddress(publicKey);
+    return { privateKey, publicKey, address };
+  }
+};
+
+// --- BIP39 Mnemonic Implementation ---
+const BIP39 = {
+  wordlist: null,
+  loaded: false,
+  loadPromise: null,
+
+  // Load BIP39 English wordlist from CDN
+  load() {
+    if (this.loadPromise) return this.loadPromise;
+    this.loadPromise = fetch('https://cdn.jsdelivr.net/gh/bitcoin/bips@master/bip-0039/english.txt')
+      .then(r => {
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return r.text();
+      })
+      .then(text => {
+        this.wordlist = text.trim().split('\n').map(w => w.trim());
+        if (this.wordlist.length !== 2048) throw new Error('Invalid wordlist: ' + this.wordlist.length);
+        this.loaded = true;
+        console.log('BIP39 wordlist loaded (' + this.wordlist.length + ' words)');
+        return true;
+      })
+      .catch(err => {
+        console.warn('BIP39 wordlist load failed, trying fallback...', err);
+        // Fallback CDN
+        return fetch('https://unpkg.com/bip39@3.1.0/src/wordlists/english.json')
+          .then(r => r.json())
+          .then(words => {
+            this.wordlist = words;
+            this.loaded = true;
+            console.log('BIP39 wordlist loaded from fallback');
+            return true;
+          })
+          .catch(err2 => {
+            console.error('All BIP39 wordlist sources failed:', err2);
+            return false;
+          });
+      });
+    return this.loadPromise;
+  },
+
+  // Generate 12-word mnemonic (128-bit entropy)
+  generateMnemonic(strength = 128) {
+    if (!this.loaded) throw new Error('BIP39 wordlist not loaded');
+
+    // Generate cryptographically secure entropy
+    const entropyBytes = new Uint8Array(strength / 8);
+    crypto.getRandomValues(entropyBytes);
+
+    // SHA-256 of entropy for checksum
+    const entropyHex = bytesToHex(entropyBytes);
+    const hashHex = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(entropyHex)).toString(CryptoJS.enc.Hex);
+
+    // Convert entropy to binary string
+    let bits = '';
+    for (const b of entropyBytes) {
+      bits += b.toString(2).padStart(8, '0');
+    }
+
+    // Append checksum bits (strength / 32 bits)
+    const checksumLen = strength / 32;
+    for (let i = 0; i < Math.ceil(checksumLen / 8); i++) {
+      bits += parseInt(hashHex.slice(i * 2, i * 2 + 2), 16).toString(2).padStart(8, '0');
+    }
+    bits = bits.slice(0, strength + checksumLen);
+
+    // Split into 11-bit groups → word indices
+    const words = [];
+    for (let i = 0; i < bits.length; i += 11) {
+      const idx = parseInt(bits.slice(i, i + 11), 2);
+      words.push(this.wordlist[idx]);
+    }
+
+    return words.join(' ');
+  },
+
+  // Validate mnemonic
+  validateMnemonic(mnemonic) {
+    if (!this.loaded) return false;
+    const words = mnemonic.trim().split(/\s+/);
+    if (![12, 15, 18, 21, 24].includes(words.length)) return false;
+    return words.every(w => this.wordlist.includes(w));
+  },
+
+  // Mnemonic → 32-byte seed for Ed25519 (PBKDF2-SHA512)
+  mnemonicToSeed(mnemonic, passphrase = '') {
+    const key = CryptoJS.PBKDF2(
+      mnemonic.trim(),
+      'mnemonic' + passphrase,
+      { keySize: 512 / 32, iterations: 2048, hasher: CryptoJS.algo.SHA512 }
+    );
+    // Use first 32 bytes as Ed25519 seed
+    return key.toString(CryptoJS.enc.Hex).slice(0, 64);
+  }
+};
+
+// --- SASEUL RPC Layer ---
+const SaseulRPC = {
+  endpoint: 'main.saseul.net',
+
+  setEndpoint(ep) {
+    this.endpoint = ep.replace(/^https?:\/\//, '').replace(/\/$/, '');
+  },
+
+  getUrl() {
+    return `https://${this.endpoint}`;
+  },
+
+  // Create a signed request (for queries like GetBalance)
+  createSignedRequest(data, privateKey) {
+    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+    const timestamp = Date.now() * 1000; // microseconds
+    const requestData = { ...data, timestamp: timestamp.toString() };
+    const dataStr = JSON.stringify(requestData);
+    const dataHash = SaseulCrypto.hashString(dataStr);
+    const signature = SaseulCrypto.sign(dataHash, privateKey);
+
+    return {
+      data: dataStr,
+      public_key: publicKey,
+      signature: signature
+    };
+  },
+
+  // Create a signed transaction (for state changes like Send)
+  createSignedTransaction(data, privateKey) {
+    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+    const timestamp = Date.now() * 1000; // microseconds
+    const txData = { ...data, timestamp: timestamp.toString() };
+    const dataStr = JSON.stringify(txData);
+    const dataHash = SaseulCrypto.hashString(dataStr);
+    const signature = SaseulCrypto.sign(dataHash, privateKey);
+
+    return {
+      data: dataStr,
+      public_key: publicKey,
+      signature: signature
+    };
+  },
+
+  // Send a request to the node
+  async request(signedRequest) {
+    try {
+      const response = await axios.post(`${this.getUrl()}/request`, signedRequest, {
+        timeout: 15000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response) return error.response.data;
+      throw error;
+    }
+  },
+
+  // Broadcast a transaction
+  async broadcastTransaction(signedTx) {
+    try {
+      const response = await axios.post(`${this.getUrl()}/transaction`, signedTx, {
+        timeout: 15000,
+        headers: { 'Content-Type': 'application/json' }
+      });
+      return response.data;
+    } catch (error) {
+      if (error.response) return error.response.data;
+      throw error;
+    }
+  },
+
+  // Get balance
+  async getBalance(address, privateKey) {
+    const signed = this.createSignedRequest({
+      type: 'GetBalance',
+      address: address
+    }, privateKey);
+    return await this.request(signed);
+  },
+
+  // Send SL
+  async send(to, amount, privateKey) {
+    const signed = this.createSignedTransaction({
+      type: 'Send',
+      to: to,
+      amount: amount
+    }, privateKey);
+    return await this.broadcastTransaction(signed);
+  },
+
+  // Check connection
+  async ping() {
+    try {
+      const response = await axios.get(`${this.getUrl()}/`, { timeout: 5000 });
+      return true;
+    } catch (e) {
+      return false;
+    }
+  }
+};
+
+// --- Encryption for local storage ---
+function encryptData(data, password) {
+  const json = JSON.stringify(data);
+  return CryptoJS.AES.encrypt(json, password).toString();
+}
+
+function decryptData(encrypted, password) {
+  try {
+    const bytes = CryptoJS.AES.decrypt(encrypted, password);
+    const json = bytes.toString(CryptoJS.enc.Utf8);
+    if (!json) return null;
+    return JSON.parse(json);
+  } catch (e) {
+    return null;
+  }
+}
+
+// --- SL Amount Helpers (18 decimals) ---
+const SL_DECIMALS = 18;
+const SL_FACTOR = BigInt(10) ** BigInt(SL_DECIMALS);
+
+function slToRaw(amount) {
+  // Convert human-readable SL to raw (string)
+  const parts = amount.toString().split('.');
+  let whole = parts[0] || '0';
+  let frac = (parts[1] || '').padEnd(SL_DECIMALS, '0').slice(0, SL_DECIMALS);
+  const raw = BigInt(whole) * SL_FACTOR + BigInt(frac);
+  return raw.toString();
+}
+
+function rawToSl(raw) {
+  // Convert raw amount to human-readable SL
+  if (!raw || raw === '0') return '0.00';
+  const bn = BigInt(raw);
+  const whole = bn / SL_FACTOR;
+  const frac = bn % SL_FACTOR;
+  const fracStr = frac.toString().padStart(SL_DECIMALS, '0');
+  // Show up to 6 decimal places
+  const trimmed = fracStr.slice(0, 6).replace(/0+$/, '') || '0';
+  return `${whole}.${trimmed === '0' ? '00' : trimmed}`;
+}
+
+// --- UI Functions ---
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  const screen = document.getElementById(name + 'Screen');
+  if (screen) {
+    screen.classList.add('active');
+  }
+
+  // Update nav
+  if (['dashboard', 'send', 'receive', 'history', 'settings'].includes(name)) {
+    document.querySelectorAll('.nav-item').forEach((item, idx) => {
+      const targets = ['dashboard', 'send', 'receive', 'history', 'settings'];
+      item.classList.toggle('active', targets[idx] === name);
+    });
+  }
+
+  // Refresh data when showing certain screens
+  if (name === 'send' && wallet.address) {
+    document.getElementById('sendAvailable').textContent = `사용 가능: ${rawToSl(wallet.balance)} SL`;
+  }
+  if (name === 'receive' && wallet.address) {
+    document.getElementById('receiveAddress').textContent = wallet.address;
+    drawQR(wallet.address);
+  }
+  if (name === 'settings' && wallet.address) {
+    document.getElementById('currentEndpoint').textContent = wallet.endpoint;
+    document.getElementById('settingsWalletName').textContent = wallet.name;
+    checkConnection();
+  }
+}
+
+function navTo(screen, el) {
+  showScreen(screen);
+}
+
+function showToast(message, type = 'success') {
+  const toast = document.getElementById('toast');
+  toast.textContent = message;
+  toast.className = `toast ${type} show`;
+  setTimeout(() => toast.classList.remove('show'), 3000);
+}
+
+function copyToClipboard(text, message) {
+  navigator.clipboard.writeText(text).then(() => {
+    showToast(message || '복사되었습니다');
+  }).catch(() => {
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast(message || '복사되었습니다');
+  });
+}
+
+function closeModal(id) {
+  document.getElementById(id).classList.remove('active');
+}
+
+// --- Password Strength ---
+document.addEventListener('DOMContentLoaded', () => {
+  const pwInput = document.getElementById('walletPassword');
+  if (pwInput) {
+    pwInput.addEventListener('input', (e) => {
+      const pw = e.target.value;
+      let strength = 0;
+      if (pw.length >= 8) strength++;
+      if (pw.length >= 12) strength++;
+      if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) strength++;
+      if (/\d/.test(pw)) strength++;
+      if (/[^A-Za-z0-9]/.test(pw)) strength++;
+
+      const fill = document.getElementById('strengthFill');
+      const pct = Math.min((strength / 5) * 100, 100);
+      fill.style.width = pct + '%';
+      fill.style.background = pct < 40 ? 'var(--danger)' : pct < 70 ? 'var(--warning)' : 'var(--success)';
+    });
+  }
+});
+
+// --- Wallet Operations ---
+let currentMnemonic = null; // temporary, cleared after backup
+
+function createWallet() {
+  const password = document.getElementById('walletPassword').value;
+  const confirmPw = document.getElementById('walletPasswordConfirm').value;
+  const name = document.getElementById('walletName').value || 'SL Wallet';
+
+  if (!password || password.length < 6) {
+    showToast('비밀번호는 6자 이상이어야 합니다', 'error');
+    return;
+  }
+  if (password !== confirmPw) {
+    showToast('비밀번호가 일치하지 않습니다', 'error');
+    return;
+  }
+
+  if (!BIP39.loaded) {
+    showToast('시드 문구 사전을 불러오는 중입니다. 잠시 후 다시 시도하세요.', 'error');
+    return;
+  }
+
+  // Generate mnemonic → derive key pair
+  const mnemonic = BIP39.generateMnemonic(128); // 12 words
+  const seedHex = BIP39.mnemonicToSeed(mnemonic);
+  const keypair = SaseulCrypto.keyPairFromSeed(seedHex);
+
+  currentMnemonic = mnemonic;
+  wallet.privateKey = keypair.privateKey;
+  wallet.publicKey = keypair.publicKey;
+  wallet.address = keypair.address;
+  wallet.mnemonic = mnemonic;
+  wallet.name = name;
+  wallet.balance = '0';
+  wallet.transactions = [];
+
+  // Show seed phrase grid
+  const grid = document.getElementById('seedPhraseGrid');
+  const words = mnemonic.split(' ');
+  grid.innerHTML = words.map((w, i) =>
+    `<div class="seed-word"><span class="num">${i + 1}</span>${w}</div>`
+  ).join('');
+
+  // Show keys in advanced section
+  document.getElementById('backupPrivateKey').textContent = keypair.privateKey;
+  document.getElementById('backupPublicKey').textContent = keypair.publicKey;
+  document.getElementById('backupAddress').textContent = keypair.address;
+
+  // Save encrypted
+  saveWallet(password);
+  showScreen('backup');
+}
+
+function copySeedPhrase() {
+  if (currentMnemonic) {
+    copyToClipboard(currentMnemonic, '시드 문구가 복사되었습니다');
+  }
+}
+
+// --- Import Tab Switch ---
+let importMode = 'seed';
+
+function switchImportTab(mode) {
+  importMode = mode;
+  document.getElementById('importSeedSection').style.display = mode === 'seed' ? 'block' : 'none';
+  document.getElementById('importKeySection').style.display = mode === 'key' ? 'block' : 'none';
+  document.getElementById('importTabSeed').className = mode === 'seed' ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('importTabSeed').style.background = mode === 'seed' ? 'var(--accent)' : '';
+  document.getElementById('importTabSeed').style.color = mode === 'seed' ? 'white' : '';
+  document.getElementById('importTabKey').className = mode === 'key' ? 'btn btn-sm' : 'btn btn-secondary btn-sm';
+  document.getElementById('importTabKey').style.background = mode === 'key' ? 'var(--accent)' : '';
+  document.getElementById('importTabKey').style.color = mode === 'key' ? 'white' : '';
+}
+
+function importWallet() {
+  const password = document.getElementById('importPassword').value;
+
+  if (!password || password.length < 6) {
+    showToast('비밀번호는 6자 이상이어야 합니다', 'error');
+    return;
+  }
+
+  try {
+    let privateKeyHex, mnemonic = null;
+
+    if (importMode === 'seed') {
+      // Import via seed phrase
+      const seedInput = document.getElementById('importSeed').value.trim();
+      if (!seedInput) {
+        showToast('시드 문구를 입력하세요', 'error');
+        return;
+      }
+      if (!BIP39.loaded) {
+        showToast('시드 문구 사전을 불러오는 중입니다. 잠시 후 다시 시도하세요.', 'error');
+        return;
+      }
+      if (!BIP39.validateMnemonic(seedInput)) {
+        showToast('유효하지 않은 시드 문구입니다. 12개의 올바른 영단어를 입력하세요.', 'error');
+        return;
+      }
+      mnemonic = seedInput;
+      privateKeyHex = BIP39.mnemonicToSeed(seedInput);
+    } else {
+      // Import via private key
+      const keyInput = document.getElementById('importKey').value.trim();
+      if (!/^[a-fA-F0-9]{64}$/.test(keyInput)) {
+        showToast('유효하지 않은 프라이빗 키입니다 (64자 hex)', 'error');
+        return;
+      }
+      privateKeyHex = keyInput.toLowerCase();
+    }
+
+    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKeyHex);
+    const address = SaseulCrypto.publicKeyToAddress(publicKey);
+
+    wallet.privateKey = privateKeyHex;
+    wallet.publicKey = publicKey;
+    wallet.address = address;
+    wallet.mnemonic = mnemonic;
+    wallet.name = 'Imported Wallet';
+    wallet.balance = '0';
+    wallet.transactions = [];
+
+    saveWallet(password);
+    showToast('지갑을 성공적으로 가져왔습니다!');
+    enterDashboard();
+  } catch (e) {
+    showToast('키 처리 중 오류가 발생했습니다: ' + e.message, 'error');
+  }
+}
+
+function saveWallet(password) {
+  const data = {
+    privateKey: wallet.privateKey,
+    publicKey: wallet.publicKey,
+    address: wallet.address,
+    mnemonic: wallet.mnemonic || null,
+    name: wallet.name,
+    endpoint: wallet.endpoint,
+    transactions: wallet.transactions
+  };
+  const encrypted = encryptData(data, password);
+  localStorage.setItem('sl_wallet', encrypted);
+  localStorage.setItem('sl_wallet_address', wallet.address); // for display on lock screen
+  encryptedStore = encrypted;
+}
+
+function loadWallet() {
+  const stored = localStorage.getItem('sl_wallet');
+  if (stored) {
+    encryptedStore = stored;
+    return true;
+  }
+  return false;
+}
+
+function unlockWallet() {
+  const password = document.getElementById('unlockPassword').value;
+  if (!password) {
+    showToast('비밀번호를 입력하세요', 'error');
+    return;
+  }
+
+  const data = decryptData(encryptedStore, password);
+  if (!data) {
+    showToast('비밀번호가 일치하지 않습니다', 'error');
+    return;
+  }
+
+  wallet.privateKey = data.privateKey;
+  wallet.publicKey = data.publicKey;
+  wallet.address = data.address;
+  wallet.mnemonic = data.mnemonic || null;
+  wallet.name = data.name || 'SL Wallet';
+  wallet.endpoint = data.endpoint || 'main.saseul.net';
+  wallet.transactions = data.transactions || [];
+
+  SaseulRPC.setEndpoint(wallet.endpoint);
+  enterDashboard();
+}
+
+function enterDashboard() {
+  document.getElementById('mainHeader').style.display = 'flex';
+  document.getElementById('navBar').style.display = 'flex';
+
+  // Update address display
+  const addr = wallet.address;
+  document.getElementById('addressShort').textContent =
+    addr.slice(0, 8) + '···' + addr.slice(-8);
+
+  // Show/hide seed phrase setting
+  const seedSetting = document.getElementById('seedPhraseSettingItem');
+  if (seedSetting) {
+    seedSetting.style.display = wallet.mnemonic ? 'flex' : 'none';
+  }
+
+  // Clear temporary mnemonic from memory
+  currentMnemonic = null;
+
+  // Update network badge
+  updateNetworkBadge();
+
+  showScreen('dashboard');
+  refreshBalance();
+}
+
+function updateNetworkBadge() {
+  const badge = document.getElementById('networkBadge');
+  const isMainnet = wallet.endpoint.includes('main');
+  badge.className = `network-badge ${isMainnet ? 'mainnet' : 'testnet'}`;
+  badge.innerHTML = `<span class="network-dot"></span>${isMainnet ? 'Mainnet' : 'Testnet'}`;
+}
+
+// --- Balance & Transactions ---
+async function refreshBalance() {
+  if (!wallet.address || !wallet.privateKey) return;
+
+  document.getElementById('balanceDisplay').innerHTML = '<div class="spinner"></div>';
+
+  try {
+    SaseulRPC.setEndpoint(wallet.endpoint);
+    const result = await SaseulRPC.getBalance(wallet.address, wallet.privateKey);
+
+    if (result && result.data && result.data.balance !== undefined) {
+      wallet.balance = result.data.balance || '0';
+    } else if (result && result.data !== undefined) {
+      // Try alternate response format
+      wallet.balance = result.data || '0';
+    }
+
+    document.getElementById('balanceDisplay').textContent = rawToSl(wallet.balance);
+    showToast('잔액이 업데이트되었습니다');
+  } catch (e) {
+    document.getElementById('balanceDisplay').textContent = rawToSl(wallet.balance);
+    showToast('잔액 조회에 실패했습니다: ' + (e.message || '네트워크 오류'), 'error');
+  }
+}
+
+function renderTransactions(containerId, limit) {
+  const container = document.getElementById(containerId);
+  const txs = wallet.transactions || [];
+
+  if (txs.length === 0) {
+    container.innerHTML = `
+      <div class="empty-state">
+        <div class="icon">📭</div>
+        <p>아직 트랜잭션이 없습니다</p>
+      </div>`;
+    return;
+  }
+
+  const items = limit ? txs.slice(-limit).reverse() : [...txs].reverse();
+  container.innerHTML = items.map(tx => {
+    const isSent = tx.type === 'sent';
+    return `
+      <div class="tx-item">
+        <div class="tx-icon ${isSent ? 'sent' : 'received'}">${isSent ? '↑' : '↓'}</div>
+        <div class="tx-info">
+          <div class="tx-type">${isSent ? '보냄' : '받음'}</div>
+          <div class="tx-address">${tx.address || '—'}</div>
+        </div>
+        <div class="tx-amount">
+          <div class="tx-amount-value ${isSent ? 'negative' : 'positive'}">
+            ${isSent ? '-' : '+'}${rawToSl(tx.amount)} SL
+          </div>
+          <div class="tx-time">${tx.time || ''}</div>
+        </div>
+      </div>`;
+  }).join('');
+}
+
+// --- Send ---
+function confirmSend() {
+  const amount = document.getElementById('sendAmount').value;
+  const to = document.getElementById('sendTo').value.trim();
+
+  if (!amount || parseFloat(amount) <= 0) {
+    showToast('전송할 수량을 입력하세요', 'error');
+    return;
+  }
+  if (!to || to.length < 40) {
+    showToast('유효한 받는 주소를 입력하세요', 'error');
+    return;
+  }
+
+  document.getElementById('confirmAmount').textContent = `${amount} SL`;
+  document.getElementById('confirmTo').textContent = to;
+  document.getElementById('confirmNetwork').textContent =
+    wallet.endpoint.includes('main') ? 'Mainnet' : 'Testnet';
+
+  document.getElementById('sendConfirmModal').classList.add('active');
+}
+
+async function executeSend() {
+  const amount = document.getElementById('sendAmount').value;
+  const to = document.getElementById('sendTo').value.trim();
+  const btn = document.getElementById('execSendBtn');
+
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const rawAmount = slToRaw(amount);
+    const result = await SaseulRPC.send(to, rawAmount, wallet.privateKey);
+
+    // Record transaction locally
+    wallet.transactions.push({
+      type: 'sent',
+      address: to.slice(0, 8) + '...' + to.slice(-8),
+      fullAddress: to,
+      amount: rawAmount,
+      time: new Date().toLocaleString('ko-KR'),
+      result: result
+    });
+
+    // Save
+    const password = prompt('트랜잭션 기록 저장을 위해 비밀번호를 입력하세요:');
+    if (password) saveWallet(password);
+
+    closeModal('sendConfirmModal');
+    showToast('전송이 완료되었습니다!');
+
+    // Clear form
+    document.getElementById('sendAmount').value = '';
+    document.getElementById('sendTo').value = '';
+    document.getElementById('sendMemo').value = '';
+
+    // Refresh
+    await refreshBalance();
+    renderTransactions('recentTxList', 5);
+    renderTransactions('fullTxList');
+    showScreen('dashboard');
+  } catch (e) {
+    showToast('전송 실패: ' + (e.message || '네트워크 오류'), 'error');
+  } finally {
+    btn.innerHTML = '전송';
+    btn.disabled = false;
+  }
+}
+
+// --- Settings ---
+async function checkConnection() {
+  const dot = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className = 'status-dot';
+  text.textContent = '확인 중...';
+
+  const connected = await SaseulRPC.ping();
+  dot.className = `status-dot ${connected ? 'connected' : 'disconnected'}`;
+  text.textContent = connected ? '연결됨' : '연결 실패';
+}
+
+function showEndpointModal() {
+  document.getElementById('endpointInput').value = wallet.endpoint;
+  document.getElementById('endpointModal').classList.add('active');
+}
+
+function changeEndpoint() {
+  const ep = document.getElementById('endpointInput').value.trim();
+  if (!ep) {
+    showToast('엔드포인트를 입력하세요', 'error');
+    return;
+  }
+  wallet.endpoint = ep;
+  SaseulRPC.setEndpoint(ep);
+  document.getElementById('currentEndpoint').textContent = ep;
+  updateNetworkBadge();
+  closeModal('endpointModal');
+  showToast('엔드포인트가 변경되었습니다');
+  checkConnection();
+}
+
+function showSeedPhraseModal() {
+  document.getElementById('seedModalPassword').value = '';
+  document.getElementById('seedModalGrid').style.display = 'none';
+  document.getElementById('seedPhraseModal').classList.add('active');
+}
+
+function revealSeedPhrase() {
+  const password = document.getElementById('seedModalPassword').value;
+  const data = decryptData(encryptedStore, password);
+  if (!data) {
+    showToast('비밀번호가 일치하지 않습니다', 'error');
+    return;
+  }
+  if (!data.mnemonic) {
+    showToast('이 지갑에는 시드 문구가 없습니다 (프라이빗 키로 가져온 지갑)', 'error');
+    return;
+  }
+  const grid = document.getElementById('seedModalGrid');
+  const words = data.mnemonic.split(' ');
+  grid.innerHTML = words.map((w, i) =>
+    `<div class="seed-word"><span class="num">${i + 1}</span>${w}</div>`
+  ).join('');
+  grid.style.display = 'grid';
+}
+
+function showPrivateKeyModal() {
+  document.getElementById('pkPassword').value = '';
+  document.getElementById('pkDisplay').style.display = 'none';
+  document.getElementById('privateKeyModal').classList.add('active');
+}
+
+function revealPrivateKey() {
+  const password = document.getElementById('pkPassword').value;
+  const data = decryptData(encryptedStore, password);
+  if (!data) {
+    showToast('비밀번호가 일치하지 않습니다', 'error');
+    return;
+  }
+  const display = document.getElementById('pkDisplay');
+  display.textContent = data.privateKey;
+  display.style.display = 'block';
+}
+
+function showChangePasswordModal() {
+  document.getElementById('currentPw').value = '';
+  document.getElementById('newPw').value = '';
+  document.getElementById('newPwConfirm').value = '';
+  document.getElementById('changePasswordModal').classList.add('active');
+}
+
+function changePassword() {
+  const currentPw = document.getElementById('currentPw').value;
+  const newPw = document.getElementById('newPw').value;
+  const confirmPw = document.getElementById('newPwConfirm').value;
+
+  if (!currentPw) { showToast('현재 비밀번호를 입력하세요', 'error'); return; }
+
+  const data = decryptData(encryptedStore, currentPw);
+  if (!data) { showToast('현재 비밀번호가 일치하지 않습니다', 'error'); return; }
+
+  if (newPw.length < 6) { showToast('새 비밀번호는 6자 이상이어야 합니다', 'error'); return; }
+  if (newPw !== confirmPw) { showToast('새 비밀번호가 일치하지 않습니다', 'error'); return; }
+
+  saveWallet(newPw);
+  closeModal('changePasswordModal');
+  showToast('비밀번호가 변경되었습니다');
+}
+
+function renameWallet() {
+  const name = prompt('새 지갑 이름:', wallet.name);
+  if (name && name.trim()) {
+    wallet.name = name.trim();
+    document.getElementById('settingsWalletName').textContent = wallet.name;
+    showToast('지갑 이름이 변경되었습니다');
+  }
+}
+
+function resetWallet() {
+  if (confirm('정말 지갑을 초기화하시겠습니까?\n프라이빗 키 백업 없이는 복구할 수 없습니다!')) {
+    if (confirm('마지막 확인: 프라이빗 키를 백업하셨나요?')) {
+      localStorage.removeItem('sl_wallet');
+      localStorage.removeItem('sl_wallet_address');
+      wallet = { privateKey: null, publicKey: null, address: null, name: 'SL Wallet', balance: '0', endpoint: 'test.saseul.net', transactions: [] };
+      encryptedStore = null;
+      document.getElementById('mainHeader').style.display = 'none';
+      document.getElementById('navBar').style.display = 'none';
+      showScreen('welcome');
+      showToast('지갑이 초기화되었습니다');
+    }
+  }
+}
+
+// --- Simple QR Code Generator (basic matrix) ---
+function drawQR(text) {
+  const canvas = document.getElementById('qrCanvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const size = 200;
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  // Simple visual hash-based pattern (not a real QR code, but visually representative)
+  const hash = CryptoJS.SHA256(text).toString(CryptoJS.enc.Hex);
+  const cellSize = 5;
+  const gridSize = Math.floor(size / cellSize);
+
+  ctx.fillStyle = '#000000';
+
+  // Generate pattern from hash
+  for (let y = 0; y < gridSize; y++) {
+    for (let x = 0; x < gridSize; x++) {
+      const idx = ((y * gridSize + x) * 2) % hash.length;
+      const val = parseInt(hash.substr(idx, 2), 16);
+      if (val > 128) {
+        ctx.fillRect(x * cellSize, y * cellSize, cellSize, cellSize);
+      }
+    }
+  }
+
+  // Add finder patterns (QR-like corners)
+  function drawFinder(cx, cy, s) {
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx, cy, s * 7, s * 7);
+    ctx.fillStyle = '#ffffff';
+    ctx.fillRect(cx + s, cy + s, s * 5, s * 5);
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(cx + s * 2, cy + s * 2, s * 3, s * 3);
+  }
+
+  drawFinder(5, 5, 5);
+  drawFinder(size - 40, 5, 5);
+  drawFinder(5, size - 40, 5);
+
+  // Center text
+  ctx.fillStyle = 'rgba(255,255,255,0.9)';
+  ctx.fillRect(size/2 - 30, size/2 - 8, 60, 16);
+  ctx.fillStyle = '#6c5ce7';
+  ctx.font = 'bold 10px Inter';
+  ctx.textAlign = 'center';
+  ctx.fillText('SL WALLET', size/2, size/2 + 4);
+}
+
+// --- Init ---
+async function init() {
+  // Load BIP39 wordlist in background
+  BIP39.load().then(ok => {
+    if (ok) console.log('BIP39 ready');
+    else showToast('시드 문구 사전 로드 실패. 인터넷 연결을 확인하세요.', 'error');
+  });
+
+  if (loadWallet()) {
+    showScreen('lock');
+  } else {
+    showScreen('welcome');
+  }
+}
+
+init();
+</script>
+</body>
+</html>
