@@ -11,31 +11,59 @@
 <script src="saseul.min.js" onerror="console.log('saseul.min.js not found locally, using built-in fallback')"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
-:root {
-  --bg-primary: #0a0a0f;
-  --bg-secondary: #12121a;
-  --bg-card: #1a1a26;
-  --bg-input: #22222e;
-  --bg-hover: #2a2a38;
-  --text-primary: #f0f0f5;
-  --text-secondary: #8888a0;
-  --text-muted: #555568;
-  --accent: #6c5ce7;
-  --accent-light: #a29bfe;
-  --accent-glow: rgba(108, 92, 231, 0.3);
-  --success: #00cec9;
-  --success-glow: rgba(0, 206, 201, 0.2);
-  --danger: #ff6b6b;
-  --danger-glow: rgba(255, 107, 107, 0.2);
-  --warning: #feca57;
-  --border: #2a2a38;
-  --radius: 12px;
-  --radius-sm: 8px;
-  --shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
-  --transition: all 0.2s ease;
+:root, [data-theme="dark"] {
+  --bg-primary: #0b0b14;
+  --bg-secondary: #111122;
+  --bg-card: rgba(255,255,255,0.04);
+  --bg-input: rgba(255,255,255,0.06);
+  --bg-hover: rgba(255,255,255,0.08);
+  --text-primary: #f0f0f8;
+  --text-secondary: #8888a8;
+  --text-muted: #555570;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-glow: rgba(99,102,241,0.3);
+  --success: #10b981;
+  --success-glow: rgba(16,185,129,0.2);
+  --danger: #ef4444;
+  --danger-glow: rgba(239,68,68,0.2);
+  --warning: #f59e0b;
+  --border: rgba(255,255,255,0.08);
+  --glass: rgba(255,255,255,0.03);
+  --glass-border: rgba(255,255,255,0.06);
+  --shadow: 0 8px 32px rgba(0,0,0,0.4);
+  --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  --radius: 16px;
+  --radius-sm: 10px;
 }
 
-* { margin: 0; padding: 0; box-sizing: border-box; }
+[data-theme="light"] {
+  --bg-primary: #f4f6fb;
+  --bg-secondary: #ffffff;
+  --bg-card: rgba(255,255,255,0.8);
+  --bg-input: rgba(0,0,0,0.04);
+  --bg-hover: rgba(0,0,0,0.06);
+  --text-primary: #111827;
+  --text-secondary: #6b7280;
+  --text-muted: #9ca3af;
+  --accent: #6366f1;
+  --accent-light: #818cf8;
+  --accent-glow: rgba(99,102,241,0.15);
+  --success: #10b981;
+  --success-glow: rgba(16,185,129,0.1);
+  --danger: #ef4444;
+  --danger-glow: rgba(239,68,68,0.1);
+  --warning: #f59e0b;
+  --border: rgba(0,0,0,0.08);
+  --glass: rgba(255,255,255,0.6);
+  --glass-border: rgba(0,0,0,0.06);
+  --shadow: 0 8px 32px rgba(0,0,0,0.08);
+  --gradient: linear-gradient(135deg, #6366f1, #8b5cf6, #06b6d4);
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
@@ -79,10 +107,11 @@ body::before {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   position: sticky;
   top: 0;
   z-index: 100;
-  background: rgba(10, 10, 15, 0.8);
+  background: var(--glass);
 }
 
 .logo {
@@ -216,9 +245,10 @@ body::before {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, var(--accent), #8b7cf7);
+  background: var(--gradient);
   color: white;
-  box-shadow: 0 4px 16px var(--accent-glow);
+  border: none;
+  box-shadow: 0 4px 20px var(--accent-glow);
 }
 
 .btn-primary:hover {
@@ -298,12 +328,14 @@ textarea.input {
 
 /* Cards */
 .card {
-  background: var(--bg-card);
-  border: 1px solid var(--border);
+  background: var(--glass);
+  border: 1px solid var(--glass-border);
   border-radius: var(--radius);
   padding: 20px;
   margin-bottom: 16px;
-  transition: var(--transition);
+  transition: all 0.3s ease;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
 }
 
 .card:hover {
@@ -325,11 +357,11 @@ textarea.input {
 }
 
 .balance-amount {
-  font-size: 42px;
+  font-size: 48px;
   font-weight: 700;
   letter-spacing: -2px;
   margin-bottom: 4px;
-  background: linear-gradient(135deg, var(--text-primary), var(--accent-light));
+  background: var(--gradient);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
@@ -610,12 +642,13 @@ textarea.input {
 
 .modal {
   background: var(--bg-secondary);
-  border: 1px solid var(--border);
+  border: 1px solid var(--glass-border);
   border-radius: 16px;
   padding: 28px;
   width: 100%;
   max-width: 420px;
   animation: modalIn 0.3s ease;
+  backdrop-filter: blur(20px);
 }
 
 @keyframes modalIn {
@@ -687,8 +720,9 @@ textarea.input {
   width: 100%;
   max-width: 480px;
   display: flex;
-  background: rgba(18, 18, 26, 0.95);
+  background: var(--glass);
   backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
   border-top: 1px solid var(--border);
   padding: 8px 0;
   padding-bottom: max(8px, env(safe-area-inset-bottom));
@@ -945,6 +979,8 @@ textarea.input {
       </div>
     </div>
     <div class="header-actions">
+      <button class="icon-btn" onclick="toggleTheme()" title="테마 전환" id="themeToggleBtn">🌙</button>
+      <button class="icon-btn" onclick="toggleLang()" title="언어 전환" id="langToggleBtn" style="font-size:12px;font-weight:600;">EN</button>
       <button class="icon-btn" onclick="showWalletListModal()" title="지갑 추가/전환" style="font-size:22px;font-weight:700;">+</button>
       <button class="icon-btn" onclick="refreshBalance()" title="새로고침">↻</button>
       <button class="icon-btn" onclick="showScreen('settings')" title="설정">⚙</button>
@@ -2730,8 +2766,205 @@ function saveWalletUpdated(password) {
   }
 }
 
+// --- Internationalization (i18n) and Theme System ---
+
+const LANG = {
+  ko: {
+    welcome_title: 'SL Wallet',
+    welcome_desc: 'SASEUL 블록체인을 위한 깔끔하고 빠른 지갑.\nGuardee보다 더 간편하게.',
+    create_wallet: '✦ 새 지갑 만들기',
+    import_wallet: '↓ 기존 지갑 가져오기',
+    back: '← 돌아가기',
+    create_wallet_title: '새 지갑 만들기',
+    create_wallet_desc: '새로운 SASEUL 계정을 생성합니다.',
+    wallet_name: '지갑 이름',
+    password: '비밀번호',
+    password_confirm: '비밀번호 확인',
+    create: '만들기',
+    import_wallet_title: '기존 지갑 가져오기',
+    import_wallet_desc: '기존 계정을 복구합니다.',
+    seed_phrase: '씨드 문구 (12개 단어)',
+    import: '가져오기',
+    dashboard: '대시보드',
+    balance: '잔액',
+    resource: '리소스',
+    send: '송금',
+    receive: '받기',
+    history: '거래 기록',
+    lock_title: '지갑 잠금 해제',
+    unlock: '잠금 해제',
+    settings: '설정',
+    add_wallet: '지갑 추가/전환',
+    refresh: '새로고침',
+    export_key: '개인키 내보내기',
+    delete_wallet: '지갑 삭제',
+    lock_wallet: '지갑 잠금',
+    logout: '로그아웃',
+    language: '언어',
+    theme: '테마',
+    dark: '다크',
+    light: '라이트',
+    copy: '복사',
+    copied: '복사됨!',
+    error: '오류',
+    success: '성공',
+    amount: '금액',
+    address: '주소',
+    from: '발신',
+    to: '수신',
+    confirm: '확인',
+    cancel: '취소',
+    close: '닫기',
+    loading: '로딩 중...',
+    send_title: '송금',
+    send_desc: 'SASEUL을 다른 주소로 전송합니다.',
+    receive_title: '받기',
+    receive_desc: 'QR 코드를 공유하거나 주소를 복사하세요.',
+    transaction: '거래',
+    all_transactions: '모든 거래',
+    no_transactions: '거래 기록이 없습니다.',
+    wallet_list: '지갑 목록',
+    add_new: '새 지갑 추가',
+    switch_wallet: '지갑 전환',
+    wallet_info: '지갑 정보',
+    public_key: '공개키',
+    private_key: '개인키',
+    hide: '숨기기',
+    show: '보기',
+    warning: '경고',
+    danger_zone: '위험 영역',
+    confirm_delete: '정말로 이 지갑을 삭제하시겠습니까?',
+    delete: '삭제',
+    resource_used: '리소스 사용량',
+    resource_limit: '리소스 한도',
+    refresh_balance: '잔액 새로고침',
+    theme_toggle: '테마 전환',
+    lang_toggle: '언어 전환',
+    ko: '한국어',
+    en: 'English'
+  },
+  en: {
+    welcome_title: 'SL Wallet',
+    welcome_desc: 'A clean and fast wallet for the SASEUL blockchain.\nEven easier than Guardee.',
+    create_wallet: '✦ Create New Wallet',
+    import_wallet: '↓ Import Existing Wallet',
+    back: '← Go Back',
+    create_wallet_title: 'Create New Wallet',
+    create_wallet_desc: 'Create a new SASEUL account.',
+    wallet_name: 'Wallet Name',
+    password: 'Password',
+    password_confirm: 'Confirm Password',
+    create: 'Create',
+    import_wallet_title: 'Import Existing Wallet',
+    import_wallet_desc: 'Recover an existing account.',
+    seed_phrase: 'Seed Phrase (12 words)',
+    import: 'Import',
+    dashboard: 'Dashboard',
+    balance: 'Balance',
+    resource: 'Resource',
+    send: 'Send',
+    receive: 'Receive',
+    history: 'History',
+    lock_title: 'Unlock Wallet',
+    unlock: 'Unlock',
+    settings: 'Settings',
+    add_wallet: 'Add/Switch Wallet',
+    refresh: 'Refresh',
+    export_key: 'Export Private Key',
+    delete_wallet: 'Delete Wallet',
+    lock_wallet: 'Lock Wallet',
+    logout: 'Logout',
+    language: 'Language',
+    theme: 'Theme',
+    dark: 'Dark',
+    light: 'Light',
+    copy: 'Copy',
+    copied: 'Copied!',
+    error: 'Error',
+    success: 'Success',
+    amount: 'Amount',
+    address: 'Address',
+    from: 'From',
+    to: 'To',
+    confirm: 'Confirm',
+    cancel: 'Cancel',
+    close: 'Close',
+    loading: 'Loading...',
+    send_title: 'Send',
+    send_desc: 'Transfer SASEUL to another address.',
+    receive_title: 'Receive',
+    receive_desc: 'Share the QR code or copy the address.',
+    transaction: 'Transaction',
+    all_transactions: 'All Transactions',
+    no_transactions: 'No transaction history.',
+    wallet_list: 'Wallet List',
+    add_new: 'Add New Wallet',
+    switch_wallet: 'Switch Wallet',
+    wallet_info: 'Wallet Info',
+    public_key: 'Public Key',
+    private_key: 'Private Key',
+    hide: 'Hide',
+    show: 'Show',
+    warning: 'Warning',
+    danger_zone: 'Danger Zone',
+    confirm_delete: 'Are you sure you want to delete this wallet?',
+    delete: 'Delete',
+    resource_used: 'Resource Used',
+    resource_limit: 'Resource Limit',
+    refresh_balance: 'Refresh Balance',
+    theme_toggle: 'Toggle Theme',
+    lang_toggle: 'Toggle Language',
+    ko: '한국어',
+    en: 'English'
+  }
+};
+
+let currentLang = localStorage.getItem('sl_lang') || 'ko';
+let currentTheme = localStorage.getItem('sl_theme') || 'dark';
+
+function setLang(lang) {
+  if (!LANG[lang]) lang = 'ko';
+  currentLang = lang;
+  localStorage.setItem('sl_lang', lang);
+
+  document.querySelectorAll('[data-i18n]').forEach(el => {
+    const key = el.getAttribute('data-i18n');
+    if (LANG[lang][key]) {
+      if (el.tagName === 'INPUT' && (el.type === 'text' || el.type === 'password')) {
+        el.placeholder = LANG[lang][key];
+      } else {
+        el.textContent = LANG[lang][key];
+      }
+    }
+  });
+
+  document.getElementById('langToggleBtn').textContent = lang === 'ko' ? 'EN' : '한글';
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === 'dark' ? 'light' : 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  localStorage.setItem('sl_theme', currentTheme);
+  document.getElementById('themeToggleBtn').textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+}
+
+function toggleLang() {
+  const newLang = currentLang === 'ko' ? 'en' : 'ko';
+  setLang(newLang);
+}
+
 // --- Init ---
 async function init() {
+  // Restore theme and language
+  currentTheme = localStorage.getItem('sl_theme') || 'dark';
+  document.documentElement.setAttribute('data-theme', currentTheme);
+  if (document.getElementById('themeToggleBtn')) {
+    document.getElementById('themeToggleBtn').textContent = currentTheme === 'dark' ? '🌙' : '☀️';
+  }
+
+  currentLang = localStorage.getItem('sl_lang') || 'ko';
+  setLang(currentLang);
+
   // Re-check SDK availability (in case of delayed load)
   useSaseulSDK = (typeof SASEUL !== 'undefined');
   console.log('SASEUL SDK status:', useSaseulSDK ? 'LOADED (official)' : 'NOT FOUND (using fallback)');
