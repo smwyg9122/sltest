@@ -1004,6 +1004,20 @@ textarea.input {
         </div>
       </div>
 
+      <!-- Resource Card -->
+      <div class="card" id="resourceCard" style="margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;">
+        <div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-bottom:4px;">채굴 리소스</div>
+          <div style="font-size:20px;font-weight:600;font-family:'JetBrains Mono',monospace;">
+            <span id="resourceDisplay">0</span>
+            <span style="font-size:12px;color:var(--text-muted);margin-left:4px;">Resource</span>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-sm" id="refineBtn" onclick="confirmRefine()" style="width:auto;padding:10px 20px;">
+          ⚗ 정제
+        </button>
+      </div>
+
       <div class="action-row">
         <button class="action-btn" onclick="showScreen('send')">
           <div class="action-icon send">↑</div>
@@ -1083,6 +1097,28 @@ textarea.input {
       <div style="display:flex;gap:10px;">
         <button class="btn btn-secondary" onclick="closeModal('sendConfirmModal')" style="flex:1;">취소</button>
         <button class="btn btn-primary" onclick="executeSend()" id="execSendBtn" style="flex:1;">전송</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Refine Confirm Modal -->
+  <div class="modal-overlay" id="refineConfirmModal">
+    <div class="modal">
+      <h3>⚗ 리소스 정제</h3>
+      <p>채굴 리소스를 SL 토큰으로 변환합니다.</p>
+      <div class="card" style="margin-bottom:20px;">
+        <div class="confirm-row">
+          <span class="confirm-label">현재 리소스</span>
+          <span class="confirm-value" id="refineResourceAmount">0</span>
+        </div>
+        <div class="confirm-row">
+          <span class="confirm-label">변환 방식</span>
+          <span class="confirm-value">Resource → SL</span>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;">
+        <button class="btn btn-secondary" onclick="closeModal('refineConfirmModal')" style="flex:1;">취소</button>
+        <button class="btn btn-primary" onclick="executeRefine()" id="execRefineBtn" style="flex:1;">⚗ 정제 실행</button>
       </div>
     </div>
   </div>
@@ -1330,6 +1366,7 @@ let wallet = {
   address: null,
   name: 'SL Wallet',
   balance: '0',
+  resource: '0',
   endpoint: '217.76.62.226:9090',
   transactions: []
 };
@@ -1525,6 +1562,21 @@ const SaseulRPC = {
     return await this._manualRequest({
       type: 'GetBalance',
       address: address
+    }, privateKey);
+  },
+
+  // Get resource balance
+  async getResource(address, privateKey) {
+    return await this._manualRequest({
+      type: 'GetResource',
+      address: address
+    }, privateKey);
+  },
+
+  // Refine resource to SL
+  async refine(privateKey) {
+    return await this._manualTransaction({
+      type: 'Refine'
     }, privateKey);
   },
 
@@ -1944,20 +1996,80 @@ async function refreshBalance() {
 
   try {
     SaseulRPC.setEndpoint(wallet.endpoint);
-    const result = await SaseulRPC.getBalance(wallet.address, wallet.privateKey);
 
-    if (result && result.data && result.data.balance !== undefined) {
-      wallet.balance = result.data.balance || '0';
-    } else if (result && result.data !== undefined) {
-      // Try alternate response format
-      wallet.balance = result.data || '0';
+    // Fetch balance and resource in parallel
+    const [balResult, resResult] = await Promise.allSettled([
+      SaseulRPC.getBalance(wallet.address, wallet.privateKey),
+      SaseulRPC.getResource(wallet.address, wallet.privateKey)
+    ]);
+
+    // Process balance
+    if (balResult.status === 'fulfilled' && balResult.value) {
+      const result = balResult.value;
+      if (result.data && result.data.balance !== undefined) {
+        wallet.balance = result.data.balance || '0';
+      } else if (result.data !== undefined) {
+        wallet.balance = result.data || '0';
+      }
+    }
+
+    // Process resource
+    if (resResult.status === 'fulfilled' && resResult.value) {
+      const result = resResult.value;
+      wallet.resource = (result.data !== undefined && result.data !== null) ? result.data.toString() : '0';
+    } else {
+      wallet.resource = '0';
     }
 
     document.getElementById('balanceDisplay').textContent = rawToSl(wallet.balance);
+    document.getElementById('resourceDisplay').textContent = rawToSl(wallet.resource);
+
+    // Show/hide refine button based on resource
+    const refineBtn = document.getElementById('refineBtn');
+    if (refineBtn) {
+      refineBtn.style.opacity = (wallet.resource && wallet.resource !== '0') ? '1' : '0.4';
+    }
+
     showToast('잔액이 업데이트되었습니다');
   } catch (e) {
     document.getElementById('balanceDisplay').textContent = rawToSl(wallet.balance);
     showToast('잔액 조회에 실패했습니다: ' + (e.message || '네트워크 오류'), 'error');
+  }
+}
+
+// --- Refine ---
+function confirmRefine() {
+  if (!wallet.resource || wallet.resource === '0') {
+    showToast('정제할 리소스가 없습니다', 'error');
+    return;
+  }
+  document.getElementById('refineResourceAmount').textContent = rawToSl(wallet.resource) + ' Resource';
+  document.getElementById('refineConfirmModal').classList.add('active');
+}
+
+async function executeRefine() {
+  const btn = document.getElementById('execRefineBtn');
+  btn.innerHTML = '<span class="spinner"></span>';
+  btn.disabled = true;
+
+  try {
+    const result = await SaseulRPC.refine(wallet.privateKey);
+
+    if (result && result.code === 200) {
+      showToast('정제가 완료되었습니다! 리소스가 SL로 변환됩니다.');
+    } else if (result && result.code === 503) {
+      showToast('노드에서 트랜잭션 처리가 비활성화되어 있습니다. 노드 설정을 확인하세요.', 'error');
+    } else {
+      showToast('정제 결과: ' + (result.msg || JSON.stringify(result)), result.code === 200 ? 'success' : 'error');
+    }
+
+    closeModal('refineConfirmModal');
+    await refreshBalance();
+  } catch (e) {
+    showToast('정제 실패: ' + (e.message || '네트워크 오류'), 'error');
+  } finally {
+    btn.innerHTML = '⚗ 정제 실행';
+    btn.disabled = false;
   }
 }
 
