@@ -121,16 +121,24 @@ body::before {
 }
 
 .logo-icon {
-  width: 36px;
-  height: 36px;
-  background: linear-gradient(135deg, var(--accent), var(--success));
-  border-radius: 10px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-weight: 700;
-  font-size: 16px;
-  color: white;
+  width: 38px;
+  height: 38px;
+  position: relative;
+}
+
+.logo-icon svg {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 8px var(--accent-glow));
+}
+
+@keyframes logoSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.logo-icon:hover svg {
+  animation: logoSpin 1s ease-in-out;
 }
 
 .logo-text {
@@ -969,7 +977,7 @@ textarea.input {
   <!-- Header -->
   <div class="header" id="mainHeader" style="display:none;">
     <div class="logo">
-      <div class="logo-icon">SL</div>
+      <div class="logo-icon"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="lg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="50%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient><linearGradient id="lg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#818cf8"/><stop offset="100%" style="stop-color:#22d3ee"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#lg1)"/><path d="M28 38c0-5 4-9 9-9h7c8 0 14 5 14 12 0 5-3 9-7 11l9 16h-11l-8-14h-3v14h-10V38zm10 8h5c3 0 5-2 5-4s-2-4-5-4h-5v8z" fill="white" opacity="0.95"/><circle cx="68" cy="62" r="16" fill="none" stroke="url(#lg2)" stroke-width="4"/><path d="M62 62l4 4 8-8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <div class="logo-text">
         SL Wallet
         <span id="networkBadge" class="network-badge mainnet">
@@ -990,7 +998,7 @@ textarea.input {
   <!-- Welcome Screen -->
   <div class="screen active" id="welcomeScreen">
     <div class="welcome">
-      <div class="welcome-icon">⛓</div>
+      <div class="welcome-icon"><svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg" width="64" height="64"><defs><linearGradient id="wlg1" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#6366f1"/><stop offset="50%" style="stop-color:#8b5cf6"/><stop offset="100%" style="stop-color:#06b6d4"/></linearGradient><linearGradient id="wlg2" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" style="stop-color:#818cf8"/><stop offset="100%" style="stop-color:#22d3ee"/></linearGradient></defs><rect width="100" height="100" rx="22" fill="url(#wlg1)"/><path d="M28 38c0-5 4-9 9-9h7c8 0 14 5 14 12 0 5-3 9-7 11l9 16h-11l-8-14h-3v14h-10V38zm10 8h5c3 0 5-2 5-4s-2-4-5-4h-5v8z" fill="white" opacity="0.95"/><circle cx="68" cy="62" r="16" fill="none" stroke="url(#wlg2)" stroke-width="4"/><path d="M62 62l4 4 8-8" fill="none" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
       <h1>SL Wallet</h1>
       <p>SASEUL 블록체인을 위한 깔끔하고 빠른 지갑.<br>Guardee보다 더 간편하게.</p>
       <div class="btn-group">
@@ -1477,6 +1485,39 @@ textarea.input {
     </div>
   </div>
 
+  <!-- dApp Screen -->
+  <div class="screen" id="dappScreen">
+    <div class="main-content">
+      <div class="back-row" onclick="showScreen('dashboard')">← <span data-i18n="back_dashboard">대시보드</span></div>
+      <h2 style="margin-bottom:8px;" data-i18n="dapp_title">dApp 브라우저</h2>
+      <p style="color:var(--text-secondary);font-size:14px;margin-bottom:24px;" data-i18n="dapp_desc">SASEUL 생태계의 탈중앙화 앱을 탐색하세요.</p>
+
+      <div class="card" style="text-align:center;padding:24px;cursor:pointer;" onclick="window.open('https://explorer.saseul.com','_blank')">
+        <div style="font-size:32px;margin-bottom:12px;">🔍</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px;" data-i18n="dapp_explorer">SASEUL Explorer</div>
+        <div style="font-size:13px;color:var(--text-muted);" data-i18n="dapp_explorer_desc">블록, 트랜잭션, 주소 조회</div>
+      </div>
+
+      <div class="card" style="text-align:center;padding:24px;cursor:pointer;" onclick="window.open('https://saseul.com','_blank')">
+        <div style="font-size:32px;margin-bottom:12px;">🌐</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px;" data-i18n="dapp_website">SASEUL 공식 사이트</div>
+        <div style="font-size:13px;color:var(--text-muted);" data-i18n="dapp_website_desc">공식 문서 및 뉴스</div>
+      </div>
+
+      <div class="card" style="text-align:center;padding:24px;cursor:pointer;" onclick="window.open('https://saseulgold.org','_blank')">
+        <div style="font-size:32px;margin-bottom:12px;">🪙</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px;" data-i18n="dapp_gold">SASEUL Gold</div>
+        <div style="font-size:13px;color:var(--text-muted);" data-i18n="dapp_gold_desc">SASEUL 골드 생태계</div>
+      </div>
+
+      <div class="card" style="text-align:center;padding:24px;opacity:0.5;">
+        <div style="font-size:32px;margin-bottom:12px;">🚀</div>
+        <div style="font-size:16px;font-weight:600;margin-bottom:4px;" data-i18n="dapp_coming">Coming Soon</div>
+        <div style="font-size:13px;color:var(--text-muted);" data-i18n="dapp_coming_desc">더 많은 dApp이 추가될 예정입니다</div>
+      </div>
+    </div>
+  </div>
+
   <!-- Lock Screen -->
   <div class="screen" id="lockScreen">
     <div class="welcome">
@@ -1509,6 +1550,10 @@ textarea.input {
     <button class="nav-item" onclick="navTo('history', this)">
       <span class="nav-icon">☰</span>
       내역
+    </button>
+    <button class="nav-item" onclick="navTo('dapp', this)">
+      <span class="nav-icon">◎</span>
+      <span data-i18n="nav_dapp">dApp</span>
     </button>
     <button class="nav-item" onclick="navTo('settings', this)">
       <span class="nav-icon">⚙</span>
@@ -1860,9 +1905,9 @@ function showScreen(name) {
   }
 
   // Update nav
-  if (['dashboard', 'send', 'receive', 'history', 'settings'].includes(name)) {
+  if (['dashboard', 'send', 'receive', 'history', 'dapp', 'settings'].includes(name)) {
     document.querySelectorAll('.nav-item').forEach((item, idx) => {
-      const targets = ['dashboard', 'send', 'receive', 'history', 'settings'];
+      const targets = ['dashboard', 'send', 'receive', 'history', 'dapp', 'settings'];
       item.classList.toggle('active', targets[idx] === name);
     });
   }
@@ -2841,7 +2886,19 @@ const LANG = {
     theme_toggle: '테마 전환',
     lang_toggle: '언어 전환',
     ko: '한국어',
-    en: 'English'
+    en: 'English',
+    nav_dapp: 'dApp',
+    dapp_title: 'dApp 브라우저',
+    dapp_desc: 'SASEUL 생태계의 탈중앙화 앱을 탐색하세요.',
+    dapp_explorer: 'SASEUL Explorer',
+    dapp_explorer_desc: '블록, 트랜잭션, 주소 조회',
+    dapp_website: 'SASEUL 공식 사이트',
+    dapp_website_desc: '공식 문서 및 뉴스',
+    dapp_gold: 'SASEUL Gold',
+    dapp_gold_desc: 'SASEUL 골드 생태계',
+    dapp_coming: 'Coming Soon',
+    dapp_coming_desc: '더 많은 dApp이 추가될 예정입니다',
+    back_dashboard: '대시보드'
   },
   en: {
     welcome_title: 'SL Wallet',
@@ -2915,7 +2972,19 @@ const LANG = {
     theme_toggle: 'Toggle Theme',
     lang_toggle: 'Toggle Language',
     ko: '한국어',
-    en: 'English'
+    en: 'English',
+    nav_dapp: 'dApp',
+    dapp_title: 'dApp Browser',
+    dapp_desc: 'Explore decentralized apps in the SASEUL ecosystem.',
+    dapp_explorer: 'SASEUL Explorer',
+    dapp_explorer_desc: 'Browse blocks, transactions & addresses',
+    dapp_website: 'SASEUL Official',
+    dapp_website_desc: 'Official docs & news',
+    dapp_gold: 'SASEUL Gold',
+    dapp_gold_desc: 'SASEUL Gold ecosystem',
+    dapp_coming: 'Coming Soon',
+    dapp_coming_desc: 'More dApps will be added soon',
+    back_dashboard: 'Dashboard'
   }
 };
 
