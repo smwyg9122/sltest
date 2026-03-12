@@ -1573,9 +1573,14 @@ const SaseulRPC = {
   // Check connection
   async ping() {
     try {
-      const response = await axios.get(`${this.getUrl()}/`, { timeout: 5000 });
+      // Use POST with a simple request since SASEUL nodes don't respond to GET
+      const response = await axios.post(`${this.getUrl()}/request`, {
+        request: JSON.stringify({ type: 'GetBalance', address: '0000000000000000000000000000000000000000000000' })
+      }, { timeout: 5000, headers: { 'Content-Type': 'application/json' } });
       return true;
     } catch (e) {
+      // If we get any response (even error), the node is reachable
+      if (e.response) return true;
       return false;
     }
   }
