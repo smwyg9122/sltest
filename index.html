@@ -4,9 +4,11 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SL Wallet — SASEUL Chain Wallet</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.2.0/crypto-js.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.3/nacl.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/crypto-js/4.1.1/crypto-js.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/tweetnacl/1.0.2/nacl.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.3.5/axios.min.js"></script>
+<!-- Official SASEUL JS Browser Build (CDN with fallback) -->
+<script src="https://cdn.jsdelivr.net/npm/saseul/dist/saseul.min.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
 <style>
 :root {
@@ -1314,8 +1316,12 @@ textarea.input {
 <script>
 // ============================================================
 // SL Wallet — SASEUL Chain Wallet
-// Crypto: Ed25519 (tweetnacl) + SHA-256 + RIPEMD-160 (crypto-js)
+// Uses official SASEUL JS SDK (SASEUL.Sign, SASEUL.Rpc)
 // ============================================================
+
+// --- Check official SASEUL SDK loaded ---
+let useSaseulSDK = (typeof SASEUL !== 'undefined');
+console.log('SASEUL SDK available:', useSaseulSDK);
 
 // --- Wallet State ---
 let wallet = {
@@ -1343,10 +1349,18 @@ function bytesToHex(bytes) {
   return Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-// --- SASEUL Crypto Implementation ---
+// --- SASEUL Crypto (Official SDK with fallback) ---
 const SaseulCrypto = {
-  // Generate a new Ed25519 key pair
   generateKeyPair() {
+    if (useSaseulSDK) {
+      const kp = SASEUL.Sign.keyPair();
+      return {
+        privateKey: kp.private_key || kp.privateKey,
+        publicKey: kp.public_key || kp.publicKey,
+        address: kp.address
+      };
+    }
+    // Fallback: tweetnacl
     const keypair = nacl.sign.keyPair();
     const privateKey = bytesToHex(keypair.secretKey.slice(0, 32));
     const publicKey = bytesToHex(keypair.publicKey);
@@ -1354,44 +1368,40 @@ const SaseulCrypto = {
     return { privateKey, publicKey, address };
   },
 
-  // Derive public key from private key
   publicKeyFromPrivate(privateKeyHex) {
+    if (useSaseulSDK) {
+      return SASEUL.Sign.publicKey(privateKeyHex);
+    }
     const seed = hexToBytes(privateKeyHex);
     const keypair = nacl.sign.keyPair.fromSeed(seed);
     return bytesToHex(keypair.publicKey);
   },
 
-  // Derive SASEUL address from public key
-  // Address = RIPEMD160(SHA256(publicKey)) + checksum
+  addressFromPublicKey(publicKeyHex) {
+    if (useSaseulSDK) {
+      return SASEUL.Sign.address(publicKeyHex);
+    }
+    return this.publicKeyToAddress(publicKeyHex);
+  },
+
   publicKeyToAddress(publicKeyHex) {
-    // SHA-256 of public key
+    // Fallback: RIPEMD160(SHA256(publicKey)) + checksum
     const sha256Hash = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(publicKeyHex));
-    // RIPEMD-160 of SHA-256 result
     const ripemd160Hash = CryptoJS.RIPEMD160(sha256Hash);
     const hashHex = ripemd160Hash.toString(CryptoJS.enc.Hex);
-    // Checksum: first 2 bytes of SHA-256(SHA-256(ripemd160Hash))
     const checksum1 = CryptoJS.SHA256(CryptoJS.enc.Hex.parse(hashHex));
     const checksum2 = CryptoJS.SHA256(checksum1);
     const checksumHex = checksum2.toString(CryptoJS.enc.Hex).slice(0, 4);
     return hashHex + checksumHex;
   },
 
-  // Sign data with private key
-  sign(dataHex, privateKeyHex) {
-    const seed = hexToBytes(privateKeyHex);
-    const keypair = nacl.sign.keyPair.fromSeed(seed);
-    const message = hexToBytes(dataHex);
-    const signature = nacl.sign.detached(message, keypair.secretKey);
-    return bytesToHex(signature);
-  },
-
-  // Hash string data to hex (SHA-256)
-  hashString(str) {
-    return CryptoJS.SHA256(str).toString(CryptoJS.enc.Hex);
-  },
-
-  // Generate key pair from a 32-byte seed (hex)
   keyPairFromSeed(seedHex) {
+    if (useSaseulSDK) {
+      // Use seed as private key directly with SASEUL SDK
+      const publicKey = SASEUL.Sign.publicKey(seedHex);
+      const address = SASEUL.Sign.address(publicKey);
+      return { privateKey: seedHex, publicKey, address };
+    }
     const seed = hexToBytes(seedHex);
     const keypair = nacl.sign.keyPair.fromSeed(seed);
     const privateKey = bytesToHex(seed);
@@ -1496,95 +1506,103 @@ const BIP39 = {
   }
 };
 
-// --- SASEUL RPC Layer ---
+// --- SASEUL RPC Layer (Official SDK with fallback) ---
 const SaseulRPC = {
   endpoint: 'main.saseul.net',
 
   setEndpoint(ep) {
     this.endpoint = ep.replace(/^https?:\/\//, '').replace(/\/$/, '');
+    if (useSaseulSDK) {
+      try {
+        SASEUL.Rpc.endpoint(this.endpoint);
+      } catch(e) {
+        try { SASEUL.Rpc.endpoints([this.endpoint]); } catch(e2) {}
+      }
+    }
   },
 
   getUrl() {
     return `https://${this.endpoint}`;
   },
 
-  // Create a signed request (for queries like GetBalance)
-  createSignedRequest(data, privateKey) {
-    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
-    const timestamp = Date.now() * 1000; // microseconds
-    const requestData = { ...data, timestamp: timestamp.toString() };
-    const dataStr = JSON.stringify(requestData);
-    const dataHash = SaseulCrypto.hashString(dataStr);
-    const signature = SaseulCrypto.sign(dataHash, privateKey);
-
-    return {
-      data: dataStr,
-      public_key: publicKey,
-      signature: signature
-    };
-  },
-
-  // Create a signed transaction (for state changes like Send)
-  createSignedTransaction(data, privateKey) {
-    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
-    const timestamp = Date.now() * 1000; // microseconds
-    const txData = { ...data, timestamp: timestamp.toString() };
-    const dataStr = JSON.stringify(txData);
-    const dataHash = SaseulCrypto.hashString(dataStr);
-    const signature = SaseulCrypto.sign(dataHash, privateKey);
-
-    return {
-      data: dataStr,
-      public_key: publicKey,
-      signature: signature
-    };
-  },
-
-  // Send a request to the node
-  async request(signedRequest) {
-    try {
-      const response = await axios.post(`${this.getUrl()}/request`, signedRequest, {
-        timeout: 15000,
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response.data;
-    } catch (error) {
-      if (error.response) return error.response.data;
-      throw error;
-    }
-  },
-
-  // Broadcast a transaction
-  async broadcastTransaction(signedTx) {
-    try {
-      const response = await axios.post(`${this.getUrl()}/transaction`, signedTx, {
-        timeout: 15000,
-        headers: { 'Content-Type': 'application/json' }
-      });
-      return response.data;
-    } catch (error) {
-      if (error.response) return error.response.data;
-      throw error;
-    }
-  },
-
-  // Get balance
+  // Get balance using official SDK
   async getBalance(address, privateKey) {
-    const signed = this.createSignedRequest({
+    if (useSaseulSDK) {
+      try {
+        const signed = SASEUL.Rpc.signedRequest({
+          type: 'GetBalance',
+          address: address
+        }, privateKey);
+        return await SASEUL.Rpc.request(signed);
+      } catch(e) {
+        console.error('SDK getBalance error:', e);
+        throw e;
+      }
+    }
+    // Fallback: manual request
+    return await this._manualRequest({
       type: 'GetBalance',
       address: address
     }, privateKey);
-    return await this.request(signed);
   },
 
-  // Send SL
+  // Send SL using official SDK
   async send(to, amount, privateKey) {
-    const signed = this.createSignedTransaction({
+    if (useSaseulSDK) {
+      try {
+        const signed = SASEUL.Rpc.signedTransaction({
+          type: 'Send',
+          to: to,
+          amount: amount
+        }, privateKey);
+        return await SASEUL.Rpc.broadcastTransaction(signed);
+      } catch(e) {
+        console.error('SDK send error:', e);
+        throw e;
+      }
+    }
+    // Fallback: manual transaction
+    return await this._manualTransaction({
       type: 'Send',
       to: to,
       amount: amount
     }, privateKey);
-    return await this.broadcastTransaction(signed);
+  },
+
+  // Fallback: manual signed request
+  async _manualRequest(data, privateKey) {
+    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+    const timestamp = Date.now() * 1000;
+    const requestData = { ...data, timestamp: timestamp.toString() };
+    const dataStr = JSON.stringify(requestData);
+    const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+
+    const seed = hexToBytes(privateKey);
+    const keypair = nacl.sign.keyPair.fromSeed(seed);
+    const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
+
+    const response = await axios.post(`${this.getUrl()}/request`, {
+      data: dataStr, public_key: publicKey, signature: signature
+    }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
+    return response.data;
+  },
+
+  // Fallback: manual signed transaction
+  async _manualTransaction(data, privateKey) {
+    const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKey);
+    const timestamp = Date.now() * 1000;
+    const txData = { ...data, timestamp: timestamp.toString() };
+    const dataStr = JSON.stringify(txData);
+    const dataHash = CryptoJS.SHA256(dataStr).toString(CryptoJS.enc.Hex);
+
+    const seed = hexToBytes(privateKey);
+    const keypair = nacl.sign.keyPair.fromSeed(seed);
+    const signature = bytesToHex(nacl.sign.detached(hexToBytes(dataHash), keypair.secretKey));
+
+    const response = await axios.post(`${this.getUrl()}/transaction`, {
+      data: dataStr, public_key: publicKey, signature: signature
+    }, { timeout: 15000, headers: { 'Content-Type': 'application/json' } });
+    return response.data;
   },
 
   // Check connection
@@ -1835,7 +1853,7 @@ function importWallet() {
     }
 
     const publicKey = SaseulCrypto.publicKeyFromPrivate(privateKeyHex);
-    const address = SaseulCrypto.publicKeyToAddress(publicKey);
+    const address = SaseulCrypto.addressFromPublicKey(publicKey);
 
     wallet.privateKey = privateKeyHex;
     wallet.publicKey = publicKey;
@@ -2238,6 +2256,19 @@ function drawQR(text) {
 
 // --- Init ---
 async function init() {
+  // Re-check SDK availability (in case of delayed load)
+  useSaseulSDK = (typeof SASEUL !== 'undefined');
+  console.log('SASEUL SDK status:', useSaseulSDK ? 'LOADED (official)' : 'NOT FOUND (using fallback)');
+
+  // Set initial endpoint
+  if (useSaseulSDK) {
+    try {
+      SASEUL.Rpc.endpoint(wallet.endpoint);
+    } catch(e) {
+      try { SASEUL.Rpc.endpoints([wallet.endpoint]); } catch(e2) {}
+    }
+  }
+
   // Load BIP39 wordlist in background
   BIP39.load().then(ok => {
     if (ok) console.log('BIP39 ready');
